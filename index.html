@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>キャパトル シフト</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --brown: #6B3A2A; --accent: #C0622A; --brown-pale: #F5EDE8; --brown-border: #D4A898;
+  --sales: #1565C0; --sales-light: #E3F2FD; --sales-bar: #42A5F5;
+  --mfg: #E65100; --mfg-light: #FFF3E0; --mfg-bar: #FFA726;
+  --green: #2E7D32; --green-light: #E8F5E9; --green-mid: #A5D6A7;
+  --red: #C62828; --red-light: #FFEBEE;
+  --warn: #F57F17; --warn-light: #FFF8E1;
+  --gray: #757575; --gray-light: #F5F5F5; --gray-border: #E0E0E0;
+  --select-border: #F9A825; --select-bg: #FFF8E1;
+}
+body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background:#F8F4F2; color:#333; min-height:100vh; }
+
+/* ===== ヘッダー ===== */
+header { background:var(--brown); color:white; height:52px; display:flex; align-items:center; padding:0 16px; gap:10px; position:sticky; top:0; z-index:300; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+header h1 { font-size:17px; font-weight:700; }
+.header-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.header-user { font-size:12px; opacity:0.85; }
+.btn-logout-h { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:white; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+
+/* ===== 画面共通 ===== */
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ===== ログイン画面 ===== */
+#screen-login { max-width:480px; margin:0 auto; padding:16px; }
+.login-hero { text-align:center; padding:28px 20px 20px; }
+.login-hero .logo { font-size:52px; margin-bottom:10px; }
+.login-hero h2 { font-size:22px; font-weight:700; color:var(--brown); margin-bottom:6px; }
+.login-hero p { font-size:13px; color:var(--gray); line-height:1.6; }
+.login-admin-card { background:white; border-radius:14px; padding:18px; margin-bottom:14px; box-shadow:0 2px 12px rgba(107,58,42,0.08); }
+.login-admin-card h3 { font-size:14px; font-weight:700; color:var(--brown); margin-bottom:6px; }
+.login-admin-card p { font-size:12px; color:var(--gray); margin-bottom:12px; }
+.store-select-wrap { margin-bottom:12px; }
+.store-select-wrap label { font-size:12px; font-weight:600; color:#555; display:block; margin-bottom:5px; }
+.store-select-wrap select { width:100%; border:1.5px solid var(--gray-border); border-radius:8px; padding:9px 12px; font-size:14px; }
+.btn-admin-login { width:100%; padding:13px; background:var(--brown); color:white; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; }
+.btn-admin-login:hover { background:var(--accent); }
+.login-divider { text-align:center; font-size:12px; color:var(--gray); margin:14px 0; position:relative; }
+.login-divider::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:var(--gray-border); }
+.login-divider span { background:#F8F4F2; padding:0 12px; position:relative; }
+.staff-list-card { background:white; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(107,58,42,0.08); }
+.staff-list-head { padding:12px 16px; font-size:13px; font-weight:600; color:var(--brown); border-bottom:1px solid var(--gray-border); background:var(--brown-pale); }
+.staff-item { display:flex; align-items:center; padding:13px 16px; border-bottom:1px solid #F5F5F5; cursor:pointer; gap:12px; }
+.staff-item:last-child { border-bottom:none; }
+.staff-item:active { background:var(--brown-pale); }
+.staff-av { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:white; flex-shrink:0; }
+.av-s { background:#1976D2; } .av-m { background:#E65100; }
+.staff-info { flex:1; }
+.staff-nm { font-size:14px; font-weight:600; }
+.staff-rl { font-size:11px; color:var(--gray); margin-top:1px; }
+.staff-arr { color:var(--gray-border); font-size:18px; }
+
+/* ===== ナビゲーション（管理者） ===== */
+.admin-nav { background:white; border-bottom:1px solid var(--gray-border); display:flex; overflow-x:auto; position:sticky; top:52px; z-index:200; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+.nav-tab { padding:12px 16px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:3px solid transparent; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.nav-tab:hover { background:var(--brown-pale); }
+
+/* ===== スタッフナビ ===== */
+.staff-nav { background:white; border-bottom:1px solid var(--gray-border); display:flex; position:sticky; top:52px; z-index:200; }
+.staff-nav-tab { flex:1; padding:11px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:3px solid transparent; cursor:pointer; text-align:center; }
+.staff-nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ===== ツールバー ===== */
+.toolbar { background:white; border-bottom:1px solid var(--gray-border); padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.btn { padding:7px 14px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-primary { background:var(--accent); color:white; }
+.btn-primary:hover { background:var(--brown); }
+.btn-outline { background:none; border:1.5px solid var(--gray-border); color:var(--gray); }
+.btn-outline:hover { background:var(--gray-light); }
+.btn-confirm { background:var(--green); color:white; }
+.btn-sm { padding:5px 10px; font-size:12px; }
+.nav-btn { background:none; border:1.5px solid var(--brown-border); border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:15px; color:var(--brown); display:flex; align-items:center; justify-content:center; }
+.nav-btn:hover { background:var(--brown-pale); }
+.period-label { font-size:15px; font-weight:700; color:var(--brown); min-width:160px; text-align:center; }
+
+/* ===== 凡例バー ===== */
+.legend-bar { background:white; border-bottom:1px solid var(--gray-border); padding:7px 16px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:11px; color:var(--gray); }
+.leg-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:3px; vertical-align:middle; }
+.leg-bar { width:22px; height:8px; border-radius:2px; display:inline-block; margin-right:3px; vertical-align:middle; }
+
+/* ===== 月間カレンダー ===== */
+.std-bar { background:white; border-bottom:1px solid var(--gray-border); padding:9px 16px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.std-item { display:flex; align-items:center; gap:6px; font-size:13px; }
+.std-input { width:48px; border:1.5px solid var(--gray-border); border-radius:6px; padding:4px 6px; font-size:13px; text-align:center; }
+.cal-wrap { padding:12px 16px 40px; overflow-x:auto; }
+.cal-table { width:100%; min-width:700px; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(107,58,42,0.08); }
+.cal-table thead th { padding:9px 4px; font-size:12px; font-weight:700; text-align:center; border-bottom:2px solid var(--gray-border); }
+.th-sun { color:var(--red); } .th-sat { color:var(--sales); } .th-wk { color:var(--gray); }
+.cal-cell { vertical-align:top; border:1px solid #F0F0F0; padding:5px; min-height:90px; width:14.28%; cursor:pointer; transition:background 0.1s; }
+.cal-cell:hover { background:#FEFAF8; }
+.cal-cell.other-month { background:#FAFAFA; opacity:0.5; cursor:default; }
+.cal-cell.today-cell { background:#FDF8F6; }
+.cal-cell.sunday .day-num { color:var(--red); }
+.cal-cell.saturday .day-num { color:var(--sales); }
+.day-num { font-size:13px; font-weight:700; margin-bottom:3px; }
+.today-badge { background:var(--brown); color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; }
+.count-row-m { display:flex; gap:3px; margin-bottom:3px; flex-wrap:wrap; }
+.count-badge { padding:2px 5px; border-radius:3px; font-size:10px; font-weight:700; }
+.badge-ok { background:var(--sales-light); color:var(--sales); }
+.badge-short { background:var(--red-light); color:var(--red); }
+.badge-warn { background:var(--warn-light); color:var(--warn); }
+.badge-empty { background:var(--gray-light); color:var(--gray); }
+.name-list-m { display:flex; flex-wrap:wrap; gap:1px; }
+.name-chip { font-size:9px; padding:1px 4px; border-radius:2px; }
+.chip-s { background:var(--sales-light); color:var(--sales); }
+.chip-m { background:var(--mfg-light); color:var(--mfg); }
+.more-chip { font-size:9px; padding:1px 4px; border-radius:2px; background:var(--gray-light); color:var(--gray); }
+
+/* ===== 週間 ===== */
+.tl-wrap { overflow-x:auto; padding:12px 16px 40px; }
+.tl-outer { min-width:800px; }
+.section-hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; margin-top:16px; }
+.section-hd:first-child { margin-top:0; }
+.sec-badge { padding:3px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+.badge-s2 { background:var(--sales-light); color:var(--sales); }
+.badge-m2 { background:var(--mfg-light); color:var(--mfg); }
+.tl-grid { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(107,58,42,0.08); margin-bottom:6px; }
+.tl-head-row { display:flex; border-bottom:2px solid var(--gray-border); background:#FAFAFA; }
+.th-name { width:80px; min-width:80px; padding:7px 6px; font-size:10px; font-weight:600; color:var(--gray); border-right:1px solid var(--gray-border); flex-shrink:0; }
+.th-day-w { flex:1; min-width:100px; text-align:center; padding:5px 3px; border-right:1px solid #F0F0F0; cursor:pointer; }
+.th-day-w:last-child { border-right:none; }
+.th-day-w.today-col { background:var(--brown-pale); }
+.th-dow { font-size:11px; font-weight:700; }
+.th-dow.sun { color:var(--red); } .th-dow.sat { color:var(--sales); }
+.th-date-w { font-size:10px; color:var(--gray); }
+.tl-row-w { display:flex; border-bottom:1px solid #F5F5F5; min-height:40px; }
+.tl-row-w:last-child { border-bottom:none; }
+.td-name-w { width:80px; min-width:80px; padding:0 6px; border-right:1px solid var(--gray-border); display:flex; align-items:center; flex-shrink:0; font-size:11px; font-weight:600; }
+.td-day-w { flex:1; min-width:100px; border-right:1px solid #F0F0F0; padding:3px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.td-day-w:last-child { border-right:none; }
+.td-day-w.today-col { background:var(--brown-pale); }
+.td-day-w:hover { background:#FAFAFA; }
+.shift-pill { border-radius:5px; padding:2px 5px; font-size:10px; font-weight:600; color:white; text-align:center; cursor:pointer; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.15); line-height:1.4; }
+.shift-pill:hover { opacity:0.85; }
+.pill-s2 { background:var(--sales-bar); }
+.pill-m2 { background:var(--mfg-bar); }
+.pill-t { opacity:0.65; }
+.pill-off2 { background:#FFEBEE; color:var(--red); border:1px solid #FFCDD2; font-size:9px; cursor:default; }
+.count-row-w { display:flex; border-top:2px solid var(--gray-border); background:#F8F8F8; }
+.count-name-w { width:80px; min-width:80px; padding:5px 6px; font-size:10px; font-weight:600; color:var(--gray); border-right:1px solid var(--gray-border); flex-shrink:0; }
+.count-day-w { flex:1; min-width:100px; border-right:1px solid #F0F0F0; padding:3px; text-align:center; font-size:10px; font-weight:700; }
+.count-day-w:last-child { border-right:none; }
+.cnt-ok { color:var(--sales); } .cnt-short { color:var(--red); } .cnt-zero { color:#BDBDBD; }
+
+/* ===== 日別タイムライン ===== */
+.day-tl-wrap { overflow-x:auto; padding:12px 16px 40px; }
+.day-tl-inner { min-width:700px; }
+.day-section-hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; margin-top:16px; }
+.day-section-hd:first-child { margin-top:0; }
+.day-tl-grid { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(107,58,42,0.08); margin-bottom:6px; }
+.day-tl-head { display:flex; border-bottom:2px solid var(--gray-border); background:#FAFAFA; }
+.day-th-name { width:80px; min-width:80px; padding:7px 6px; font-size:10px; font-weight:600; color:var(--gray); border-right:1px solid var(--gray-border); flex-shrink:0; }
+.day-th-hours { flex:1; display:flex; }
+.day-th-hour { flex:1; text-align:center; font-size:9px; color:var(--gray); padding:7px 0; border-right:1px solid #F0F0F0; }
+.day-tl-row { display:flex; border-bottom:1px solid #F5F5F5; min-height:44px; align-items:center; }
+.day-tl-row:last-child { border-bottom:none; }
+.day-td-name { width:80px; min-width:80px; padding:0 6px; border-right:1px solid var(--gray-border); align-self:stretch; display:flex; align-items:center; flex-shrink:0; }
+.day-staff-nm { font-size:11px; font-weight:600; }
+.day-td-bar { flex:1; position:relative; height:44px; cursor:crosshair; }
+.day-td-bar:hover { background:#FAFAFA; }
+.day-grid-line { position:absolute; top:0; bottom:0; border-left:1px solid #F0F0F0; pointer-events:none; }
+.day-shift-bar { position:absolute; top:7px; bottom:7px; border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:white; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.15); min-width:16px; }
+.day-shift-bar:hover { opacity:0.85; }
+.day-bar-s { background:var(--sales-bar); }
+.day-bar-m { background:var(--mfg-bar); }
+.day-bar-t { opacity:0.65; }
+.day-count-row { display:flex; border-top:2px solid var(--gray-border); background:#F8F8F8; }
+.day-count-name { width:80px; min-width:80px; padding:6px; font-size:10px; font-weight:600; color:var(--gray); border-right:1px solid var(--gray-border); flex-shrink:0; }
+.day-count-val { flex:1; padding:6px; text-align:center; font-size:12px; font-weight:700; }
+
+/* ===== テンプレート ===== */
+.tmpl-wrap { padding:12px 16px 40px; }
+.tmpl-card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(107,58,42,0.08); }
+.tmpl-card-hd { padding:12px 16px; border-bottom:1px solid var(--gray-border); background:var(--brown-pale); display:flex; align-items:center; justify-content:space-between; }
+.tmpl-card-hd h3 { font-size:14px; font-weight:700; color:var(--brown); }
+.tmpl-table { width:100%; border-collapse:collapse; }
+.tmpl-table th { background:#F5F5F5; padding:9px 12px; font-size:11px; font-weight:600; color:var(--gray); text-align:left; border-bottom:1px solid var(--gray-border); }
+.tmpl-table td { padding:10px 12px; font-size:12px; border-bottom:1px solid #F0F0F0; vertical-align:middle; }
+.tmpl-table tr:last-child td { border-bottom:none; }
+.tmpl-table tr:hover td { background:var(--brown-pale); }
+.dow-badges { display:flex; gap:3px; }
+.dow-badge { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
+.dow-active-sun { background:#FFEBEE; color:var(--red); }
+.dow-active-sat { background:var(--sales-light); color:var(--sales); }
+.dow-active-wk { background:var(--brown-pale); color:var(--brown); }
+.dow-inactive { background:#F5F5F5; color:#BDBDBD; }
+.dept-badge { padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; }
+.dept-s2 { background:var(--sales-light); color:var(--sales); }
+.dept-m2 { background:var(--mfg-light); color:var(--mfg); }
+.status-badge { padding:2px 8px; border-radius:12px; font-size:10px; font-weight:600; }
+.st-active { background:var(--green-light); color:var(--green); }
+.tmpl-empty { padding:40px; text-align:center; color:var(--gray); font-size:13px; }
+.generate-panel { background:var(--green-light); border:1.5px solid var(--green-mid); border-radius:10px; padding:16px; margin:12px 16px; }
+.generate-panel h3 { font-size:14px; font-weight:700; color:var(--green); margin-bottom:6px; }
+.generate-panel p { font-size:12px; color:#388E3C; margin-bottom:12px; }
+.gen-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.gen-row input { border:1.5px solid var(--green-mid); border-radius:6px; padding:7px 10px; font-size:13px; background:white; }
+.btn-gen { background:var(--green); color:white; border:none; border-radius:8px; padding:9px 18px; font-size:13px; font-weight:700; cursor:pointer; }
+
+/* ===== スタッフ予定入力 ===== */
+#staff-schedule { max-width:480px; margin:0 auto; padding:12px 16px 100px; }
+.month-nav-s { background:white; border-radius:10px; padding:10px 14px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(107,58,42,0.08); }
+.month-nav-s h3 { font-size:15px; font-weight:700; color:var(--brown); }
+.mode-hint { background:var(--warn-light); border-radius:8px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:#795548; }
+.summary-s { background:white; border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; gap:14px; box-shadow:0 2px 8px rgba(107,58,42,0.08); }
+.sum-item { flex:1; text-align:center; }
+.sum-num { font-size:22px; font-weight:700; }
+.sum-lbl { font-size:10px; color:var(--gray); margin-top:1px; }
+.num-w { color:var(--green); } .num-o { color:var(--red); }
+.cal-card-s { background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(107,58,42,0.08); margin-bottom:10px; }
+.cal-head-s { display:grid; grid-template-columns:repeat(7,1fr); background:var(--brown-pale); border-bottom:1px solid var(--gray-border); }
+.cal-dow-s { text-align:center; padding:8px 0; font-size:11px; font-weight:700; }
+.cal-dow-s.sun { color:var(--red); } .cal-dow-s.sat { color:var(--sales); } .cal-dow-s.wk { color:var(--gray); }
+.cal-grid-s { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--gray-border); }
+.cal-cell-s { background:white; min-height:50px; padding:3px 2px; display:flex; flex-direction:column; align-items:center; gap:1px; cursor:pointer; user-select:none; }
+.cal-cell-s:active { opacity:0.8; }
+.cal-cell-s.empty-s { background:#FAFAFA; cursor:default; }
+.cal-cell-s.past-s { opacity:0.4; cursor:default; }
+.cal-num-s { font-size:12px; font-weight:600; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+.cal-cell-s.sun-s .cal-num-s { color:var(--red); }
+.cal-cell-s.sat-s .cal-num-s { color:var(--sales); }
+.cal-cell-s.today-s .cal-num-s { background:var(--brown); color:white; }
+.cal-cell-s.work-s { background:#E8F5E9; }
+.cal-cell-s.off-s { background:#FFEBEE; }
+.cal-cell-s.work-s .cal-num-s { color:var(--green); }
+.cal-cell-s.off-s .cal-num-s { color:var(--red); }
+.cal-cell-s.selecting-s { background:var(--select-bg); outline:2px solid var(--select-border); outline-offset:-2px; }
+.cal-cell-s.selecting-s .cal-num-s { color:#F57F17; }
+.state-icon-s { font-size:14px; line-height:1; }
+.time-lbl-s { font-size:8px; color:var(--green); font-weight:600; line-height:1; }
+.bulk-bar { position:fixed; bottom:0; left:0; right:0; background:white; border-top:2px solid var(--select-border); padding:10px 16px; display:none; align-items:center; gap:8px; z-index:100; box-shadow:0 -4px 16px rgba(0,0,0,0.12); max-width:480px; margin:0 auto; }
+.bulk-bar.show { display:flex; }
+.bulk-count { font-size:13px; font-weight:700; color:#F57F17; flex:1; }
+.btn-bulk-set { background:var(--accent); color:white; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+.btn-bulk-cancel { background:none; border:1px solid var(--gray-border); border-radius:8px; padding:9px 10px; font-size:13px; color:var(--gray); cursor:pointer; }
+.btn-submit-s { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(192,98,42,0.3); }
+
+/* ===== 今日のシフト（スタッフ閲覧） ===== */
+#staff-today { max-width:480px; margin:0 auto; padding:12px 16px 40px; }
+.today-card { background:white; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 10px rgba(107,58,42,0.08); }
+.today-card h3 { font-size:14px; font-weight:700; color:var(--brown); margin-bottom:10px; }
+.today-staff-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #F5F5F5; font-size:13px; }
+.today-staff-row:last-child { border-bottom:none; }
+.today-av { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:white; flex-shrink:0; }
+.today-time { margin-left:auto; font-size:12px; color:var(--gray); }
+.today-status { font-size:10px; padding:2px 6px; border-radius:10px; }
+.st-t { background:var(--warn-light); color:var(--warn); }
+.st-c { background:var(--green-light); color:var(--green); }
+.today-empty { text-align:center; padding:24px; color:var(--gray); font-size:13px; font-style:italic; }
+
+/* ===== モーダル共通 ===== */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:white; border-radius:12px; width:460px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.modal-hd { padding:14px 18px; border-bottom:1px solid var(--gray-border); display:flex; align-items:center; justify-content:space-between; background:var(--brown-pale); position:sticky; top:0; }
+.modal-hd h3 { font-size:15px; font-weight:700; color:var(--brown); }
+.modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:var(--gray); }
+.modal-body { padding:18px; }
+.modal-ft { padding:12px 18px; border-top:1px solid var(--gray-border); display:flex; justify-content:space-between; align-items:center; }
+.form-group { margin-bottom:14px; }
+.form-label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:5px; }
+.form-control { width:100%; border:1.5px solid var(--gray-border); border-radius:6px; padding:8px 10px; font-size:13px; }
+.form-control:focus { outline:none; border-color:var(--brown); }
+.form-row { display:flex; gap:10px; }
+.form-row .form-group { flex:1; }
+.radio-row { display:flex; gap:8px; }
+.radio-item input { display:none; }
+.radio-lbl { display:block; padding:8px 12px; border:2px solid var(--gray-border); border-radius:8px; text-align:center; cursor:pointer; font-size:13px; font-weight:600; }
+.radio-item input:checked + .radio-lbl.ls { border-color:var(--sales); background:var(--sales-light); color:var(--sales); }
+.radio-item input:checked + .radio-lbl.lm { border-color:var(--mfg); background:var(--mfg-light); color:var(--mfg); }
+.status-row { display:flex; gap:8px; }
+.status-btn { flex:1; padding:8px; border:1.5px solid var(--gray-border); border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:white; }
+.status-btn.t-active { border-color:#F9A825; background:#FFF8E1; color:#F57F17; }
+.status-btn.c-active { border-color:var(--green); background:var(--green-light); color:var(--green); }
+.btn-del { background:none; border:1px solid var(--red); color:var(--red); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; }
+.btn-del:hover { background:var(--red-light); }
+
+/* スタッフ用モーダル（下から出る） */
+.modal-bottom { background:white; border-radius:20px 20px 0 0; width:100%; max-width:480px; padding:18px 18px 36px; max-height:85vh; overflow-y:auto; }
+.modal-handle { width:36px; height:4px; background:var(--gray-border); border-radius:2px; margin:0 auto 14px; }
+.choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.choice-btn { padding:14px 8px; border:2px solid var(--gray-border); border-radius:12px; background:white; cursor:pointer; text-align:center; }
+.choice-btn.sel-work { border-color:var(--green); background:var(--green-light); }
+.choice-btn.sel-off { border-color:var(--red); background:var(--red-light); }
+.choice-icon2 { font-size:26px; margin-bottom:5px; }
+.choice-lbl2 { font-size:13px; font-weight:700; color:#333; }
+.time-sel-area { background:var(--green-light); border-radius:8px; padding:10px; margin-bottom:10px; display:none; }
+.time-sel-area.show { display:block; }
+.time-sel-lbl { font-size:11px; font-weight:600; color:var(--green); margin-bottom:6px; }
+.time-sel-row { display:flex; align-items:center; gap:6px; }
+.time-sel-row select { flex:1; border:1.5px solid var(--green-mid); border-radius:6px; padding:7px 6px; font-size:13px; background:white; }
+.btn-clear2 { width:100%; padding:10px; background:none; border:1.5px solid var(--gray-border); border-radius:8px; font-size:13px; color:var(--gray); cursor:pointer; margin-bottom:8px; }
+.btn-modal-ok { width:100%; padding:13px; background:var(--accent); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+.dates-preview { background:var(--warn-light); border-radius:8px; padding:8px 10px; margin-bottom:12px; font-size:11px; color:#795548; line-height:1.8; }
+
+/* ポップアップ（月間クリック） */
+.popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:400; align-items:center; justify-content:center; }
+.popup-overlay.open { display:flex; }
+.popup { background:white; border-radius:12px; width:380px; max-width:95vw; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.popup-hd { padding:12px 16px; border-bottom:1px solid var(--gray-border); display:flex; align-items:center; justify-content:space-between; background:var(--brown-pale); position:sticky; top:0; }
+.popup-hd h3 { font-size:14px; font-weight:700; color:var(--brown); }
+.popup-close { background:none; border:none; font-size:18px; cursor:pointer; color:var(--gray); }
+.popup-body { padding:14px 16px; }
+.popup-sec-title { font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; margin-bottom:6px; }
+.popup-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid #F5F5F5; font-size:12px; }
+.popup-row:last-child { border-bottom:none; }
+.status-dot2 { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.dot-t { background:#FFA726; } .dot-c { background:var(--green); }
+.popup-time { margin-left:auto; font-size:11px; color:var(--gray); }
+.popup-empty2 { font-size:12px; color:var(--gray); padding:6px 0; font-style:italic; }
+
+/* トースト */
+.toast { position:fixed; bottom:70px; right:16px; background:#323232; color:white; padding:10px 18px; border-radius:8px; font-size:13px; z-index:1000; transform:translateY(60px); opacity:0; transition:all 0.3s; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:var(--green); }
+.toast.error { background:var(--red); }
+.loading { text-align:center; padding:50px; color:var(--gray); font-size:13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px">🍞</span>
+  <h1>キャパトル シフト</h1>
+  <div class="header-right">
+    <span class="header-user" id="headerUser"></span>
+    <button class="btn-logout-h" id="logoutBtn" onclick="logout()" style="display:none">← 戻る</button>
+  </div>
+</header>
+
+<!-- ===== ログイン画面 ===== -->
+<div class="screen active" id="screen-login">
+  <div style="height:12px"></div>
+  <div class="login-hero">
+    <div class="logo">🍞</div>
+    <h2>キャパトル シフト</h2>
+    <p>管理者またはスタッフとして<br>ログインしてください</p>
+  </div>
+  <div style="max-width:480px;margin:0 auto;padding:0 16px">
+    <div class="login-admin-card">
+      <h3>⚙️ 管理者としてログイン</h3>
+      <p>シフト作成・編集・テンプレート管理ができます</p>
+      <div class="store-select-wrap">
+        <label>店舗を選択</label>
+        <select id="adminStoreSelect"><option value="">読み込み中...</option></select>
+      </div>
+      <button class="btn-admin-login" onclick="loginAdmin()">管理者画面へ →</button>
+    </div>
+    <div class="login-divider"><span>または</span></div>
+    <div class="staff-list-card">
+      <div class="staff-list-head">👤 スタッフとしてログイン</div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--gray-border);background:#FAFAFA">
+        <select id="loginStoreFilter" onchange="filterStaffList()" style="width:100%;border:1.5px solid var(--brown-border);border-radius:8px;padding:8px 10px;font-size:14px;background:white">
+          <option value="">読み込み中...</option>
+        </select>
+      </div>
+      <div id="loginStaffList" style="max-height:320px;overflow-y:auto"><div style="padding:16px;text-align:center;color:#999;font-size:13px">読み込み中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 管理者画面 ===== -->
+<div class="screen" id="screen-admin">
+  <div class="admin-nav">
+    <div class="nav-tab active" onclick="adminTab('monthly')">📅 月間</div>
+    <div class="nav-tab" onclick="adminTab('weekly')">📋 週間</div>
+    <div class="nav-tab" onclick="adminTab('daily')">⏱ 日別</div>
+    <div class="nav-tab" onclick="adminTab('template')">🔧 テンプレート</div>
+    <div class="nav-tab" onclick="adminTab('notice')">🔔 お知らせ</div>
+    <div class="nav-tab" onclick="adminTab('swap')">🔄 交代申請</div>
+    <div class="nav-tab" onclick="adminTab('staffmgr')">👤 スタッフ</div>
+    <div class="nav-tab" onclick="adminTab('skillmap')">🎯 スキル</div>
+    <div class="nav-tab" onclick="adminTab('leave')">🌴 有給</div>
+  </div>
+
+  <!-- 月間 -->
+  <div id="admin-monthly">
+    <div class="std-bar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">標準人数：</span>
+      <div class="std-item"><label style="font-size:12px;color:var(--gray);font-weight:600">販売</label><input type="number" class="std-input" id="stdSales" value="3" min="1" max="20" onchange="renderMonthly()"><span style="font-size:11px;color:var(--gray)">名</span></div>
+      <div class="std-item"><label style="font-size:12px;color:var(--gray);font-weight:600">製造</label><input type="number" class="std-input" id="stdMfg" value="4" min="1" max="20" onchange="renderMonthly()"><span style="font-size:11px;color:var(--gray)">名</span></div>
+    </div>
+    <div class="toolbar">
+      <div class="month-nav" style="display:flex;align-items:center;gap:8px">
+        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="period-label" id="monthLabel">2026年7月</div>
+        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        <button class="btn btn-outline btn-sm" onclick="goThisMonth()">今月</button>
+      </div>
+    </div>
+    <div class="legend-bar">
+      <span><span class="leg-dot" style="background:var(--sales-light);border:1px solid var(--sales)"></span>充足</span>
+      <span><span class="leg-dot" style="background:var(--warn-light);border:1px solid var(--warn)"></span>やや不足</span>
+      <span><span class="leg-dot" style="background:var(--red-light);border:1px solid var(--red)"></span>不足</span>
+    </div>
+    <div class="cal-wrap"><div id="monthlyCalArea"><div class="loading">読み込み中...</div></div></div>
+  </div>
+
+  <!-- 週間 -->
+  <div id="admin-weekly" style="display:none">
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="nav-btn" onclick="changeWeek(-1)">‹</button>
+        <div class="period-label" id="weekLabel" style="min-width:180px">7月1日〜7日</div>
+        <button class="nav-btn" onclick="changeWeek(1)">›</button>
+        <button class="btn btn-outline btn-sm" onclick="goThisWeek()">今週</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="openShiftModal()">＋ 追加</button>
+        <button class="btn btn-confirm btn-sm" onclick="confirmWeek()">✓ 一括確定</button>
+      </div>
+    </div>
+    <div class="legend-bar">
+      <span><span class="leg-bar" style="background:var(--sales-bar)"></span>販売</span>
+      <span><span class="leg-bar" style="background:var(--mfg-bar)"></span>製造</span>
+      <span><span class="leg-bar" style="background:var(--sales-bar);opacity:0.6"></span>仮</span>
+      <span><span class="leg-bar" style="background:#FFEBEE;border:1px solid #FFCDD2"></span>休み希望</span>
+    </div>
+    <div class="tl-wrap"><div class="tl-outer" id="weeklyArea"><div class="loading">読み込み中...</div></div></div>
+  </div>
+
+  <!-- 日別 -->
+  <div id="admin-daily" style="display:none">
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="nav-btn" onclick="changeDay(-1)">‹</button>
+        <div class="period-label" id="dayLabel" style="min-width:180px">7月1日（火）</div>
+        <button class="nav-btn" onclick="changeDay(1)">›</button>
+        <button class="btn btn-outline btn-sm" onclick="goToday()">今日</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="openShiftModal()">＋ 追加</button>
+        <button class="btn btn-confirm btn-sm" onclick="confirmDay()">✓ 確定</button>
+      </div>
+    </div>
+    <div class="day-tl-wrap"><div class="day-tl-inner" id="dailyArea"><div class="loading">読み込み中...</div></div></div>
+  </div>
+
+  <!-- 交代申請管理 -->
+  <div id="admin-swap" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">🔄 交代申請管理</span>
+      <span style="font-size:12px;color:var(--gray);margin-left:8px">スタッフ同士が承認した申請を最終確認します</span>
+    </div>
+    <div style="padding:12px 16px 40px">
+      <div id="adminSwapList"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- スタッフ管理 -->
+  <div id="admin-staffmgr" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">👤 スタッフ管理</span>
+      <span style="font-size:12px;color:var(--gray);margin-left:8px">時給・扶養枠を設定できます</span>
+    </div>
+    <div style="padding:12px 16px 40px">
+      <div id="staffMgrList"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- スキルマップ -->
+  <div id="admin-skillmap" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">🎯 スキルマップ</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="openSkillModal()">＋ スキル追加</button>
+      </div>
+    </div>
+    <div style="padding:12px 16px 40px;overflow-x:auto">
+      <div id="skillMapArea"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- 有給管理 -->
+  <div id="admin-leave" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">🌴 有給管理</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <select id="leaveYear" onchange="loadLeave()" style="border:1.5px solid var(--brown-border);border-radius:6px;padding:5px 8px;font-size:13px"></select>
+        <span style="font-size:12px;color:var(--gray)">年度</span>
+      </div>
+    </div>
+    <div style="padding:12px 16px 40px">
+      <div id="leaveArea"><div class="loading">読み込み中...</div></div>
+      <!-- 有給申請一覧 -->
+      <div style="margin-top:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:8px">📋 有給申請一覧</div>
+        <div id="leaveRequestArea"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- お知らせ管理 -->
+  <div id="admin-notice" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">🔔 お知らせ管理</span>
+      <div style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="openNoticeModal()">＋ 投稿する</button>
+      </div>
+    </div>
+    <div style="padding:12px 16px 40px">
+      <div id="adminNoticeList"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- テンプレート -->
+  <div id="admin-template" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;font-weight:600;color:var(--brown)">固定シフトテンプレート</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--gray)">📅 提出締切：毎月</span>
+        <input type="number" id="deadlineDayInput" value="20" min="1" max="28" style="width:48px;border:1.5px solid var(--brown-border);border-radius:6px;padding:4px 6px;font-size:13px;text-align:center">
+        <span style="font-size:12px;color:var(--gray)">日</span>
+        <button class="btn btn-outline btn-sm" onclick="saveDeadline()">保存</button>
+        <button class="btn btn-primary btn-sm" onclick="openTmplModal()">＋ 追加</button>
+      </div>
+    </div>
+    <div class="generate-panel">
+      <h3>⚡ シフト自動生成</h3>
+      <p>テンプレートから指定月のシフトを一括生成します</p>
+      <div class="gen-row">
+        <label style="font-size:12px;font-weight:600">対象月：</label>
+        <input type="month" id="genMonth">
+        <button class="btn-gen" onclick="generateShifts()">▶ 生成する</button>
+      </div>
+    </div>
+    <div class="tmpl-wrap">
+      <div class="tmpl-card">
+        <div class="tmpl-card-hd"><h3>テンプレート一覧</h3></div>
+        <div id="tmplListArea"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== スタッフ画面 ===== -->
+<div class="screen" id="screen-staff">
+  <div class="staff-nav" style="overflow-x:auto">
+    <div class="staff-nav-tab active" onclick="staffTab('schedule')">📅 予定入力</div>
+    <div class="staff-nav-tab" onclick="staffTab('myshift')">📋 マイシフト</div>
+    <div class="staff-nav-tab" onclick="staffTab('notice')">🔔 お知らせ</div>
+    <div class="staff-nav-tab" onclick="staffTab('swap')">🔄 交代申請</div>
+    <div class="staff-nav-tab" onclick="staffTab('leave')">🌴 有給申請</div>
+    <div class="staff-nav-tab" onclick="staffTab('today')">👥 今日のメンバー</div>
+  </div>
+  <div id="staff-schedule">
+    <div style="height:8px"></div>
+    <div id="deadlineBanner" style="display:none;background:#FFEBEE;border:1.5px solid #EF9A9A;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#C62828;font-weight:600">⚠️ 提出締切日（<span id="deadlineDate"></span>）を過ぎています。できるだけ早めに提出してください。</div>
+  <div class="month-nav-s">
+      <button class="nav-btn" onclick="changeStaffMonth(-1)">‹</button>
+      <h3 id="staffMonthLabel">2026年7月</h3>
+      <button class="nav-btn" onclick="changeStaffMonth(1)">›</button>
+    </div>
+    <div class="mode-hint">💡 日付を<strong>複数タップ</strong>してまとめて設定できます</div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;font-size:11px;color:var(--gray)">
+      <span><span style="display:inline-block;width:12px;height:12px;background:#E8F5E9;border:1px solid #A5D6A7;border-radius:2px;vertical-align:middle;margin-right:3px"></span>出勤</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#FFEBEE;border:1px solid #EF9A9A;border-radius:2px;vertical-align:middle;margin-right:3px"></span>休み希望</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#FFF8E1;border:1px solid #F9A825;border-radius:2px;vertical-align:middle;margin-right:3px"></span>選択中</span>
+    </div>
+    <div class="summary-s">
+      <div class="sum-item"><div class="sum-num num-w" id="sumWork">0</div><div class="sum-lbl">✅ 出勤できる</div></div>
+      <div class="sum-item"><div class="sum-num num-o" id="sumOff">0</div><div class="sum-lbl">🙏 お休み希望</div></div>
+    </div>
+    <div class="cal-card-s">
+      <div class="cal-head-s">
+        <div class="cal-dow-s sun">日</div><div class="cal-dow-s wk">月</div><div class="cal-dow-s wk">火</div>
+        <div class="cal-dow-s wk">水</div><div class="cal-dow-s wk">木</div><div class="cal-dow-s wk">金</div><div class="cal-dow-s sat">土</div>
+      </div>
+      <div class="cal-grid-s" id="staffCalGrid"></div>
+    </div>
+    <button class="btn-submit-s" onclick="submitSchedule()">📤 この内容で送信する</button>
+    <div style="text-align:center;font-size:11px;color:var(--gray);margin-top:8px">送信後も修正できます</div>
+  </div>
+  <div id="staff-today" style="display:none">
+    <div style="height:8px"></div>
+    <div id="todayArea"><div class="loading">読み込み中...</div></div>
+  </div>
+
+  <!-- お知らせ画面 -->
+  <div id="staff-notice" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding:12px 16px 40px">
+      <div style="height:8px"></div>
+      <div id="noticeListArea"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- 交代申請画面 -->
+  <div id="staff-swap" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding:12px 16px 40px">
+      <div style="height:8px"></div>
+
+      <!-- 申請ボタン -->
+      <button onclick="openSwapRequestModal()" style="width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(192,98,42,0.3)">
+        🔄 シフト交代を申請する
+      </button>
+
+      <!-- 受信した申請 -->
+      <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(107,58,42,0.08);margin-bottom:12px">
+        <div style="padding:12px 16px;font-size:13px;font-weight:700;color:var(--brown);border-bottom:1px solid var(--gray-border);background:var(--brown-pale)">
+          📩 自分への交代依頼
+        </div>
+        <div id="swapInboxArea"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <!-- 送信した申請 -->
+      <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(107,58,42,0.08)">
+        <div style="padding:12px 16px;font-size:13px;font-weight:700;color:var(--brown);border-bottom:1px solid var(--gray-border);background:var(--brown-pale)">
+          📤 自分からの申請
+        </div>
+        <div id="swapOutboxArea"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタッフ有給申請画面 -->
+  <div id="staff-leave" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding:12px 16px 40px">
+      <div style="height:8px"></div>
+      <!-- 有給残日数カード -->
+      <div id="leaveBalanceCard" style="background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(107,58,42,0.08)">
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:12px">🌴 有給残日数</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="text-align:center;background:#E8F5E9;border-radius:10px;padding:12px 8px">
+            <div style="font-size:22px;font-weight:700;color:var(--green)" id="leaveTotalDays">-</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">付与日数</div>
+          </div>
+          <div style="text-align:center;background:#FFEBEE;border-radius:10px;padding:12px 8px">
+            <div style="font-size:22px;font-weight:700;color:var(--red)" id="leaveUsedDays">-</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">使用日数</div>
+          </div>
+          <div style="text-align:center;background:#E3F2FD;border-radius:10px;padding:12px 8px">
+            <div style="font-size:22px;font-weight:700;color:var(--sales)" id="leaveRemainDays">-</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">残日数</div>
+          </div>
+        </div>
+        <button onclick="openLeaveRequestModal()" style="width:100%;padding:11px;background:var(--green);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">🌴 有給申請する</button>
+      </div>
+      <!-- 申請履歴 -->
+      <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(107,58,42,0.08)">
+        <div style="padding:12px 16px;font-size:13px;font-weight:700;color:var(--brown);border-bottom:1px solid var(--gray-border);background:var(--brown-pale)">申請履歴</div>
+        <div id="leaveHistoryArea"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- マイシフト画面 -->
+  <div id="staff-myshift" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding:12px 16px 40px">
+      <div style="height:8px"></div>
+
+      <!-- 月ナビ -->
+      <div class="month-nav-s" style="margin-bottom:10px">
+        <button class="nav-btn" onclick="changeMyShiftMonth(-1)">‹</button>
+        <h3 id="myShiftMonthLabel" style="font-size:15px;font-weight:700;color:var(--brown)">2026年7月</h3>
+        <button class="nav-btn" onclick="changeMyShiftMonth(1)">›</button>
+      </div>
+
+      <!-- サマリーカード -->
+      <div style="background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(107,58,42,0.08)">
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:12px">📊 今月のサマリー</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center;background:#F8F4F2;border-radius:10px;padding:12px 8px">
+            <div style="font-size:22px;font-weight:700;color:var(--brown)" id="myShiftDays">0</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">出勤日数</div>
+          </div>
+          <div style="text-align:center;background:#E8F5E9;border-radius:10px;padding:12px 8px">
+            <div style="font-size:22px;font-weight:700;color:var(--green)" id="myShiftHours">0</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">合計時間</div>
+          </div>
+          <div style="text-align:center;background:#FFF3E0;border-radius:10px;padding:12px 8px">
+            <div style="font-size:18px;font-weight:700;color:var(--mfg)" id="myShiftWage">¥0</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">予想給与</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;background:#F5F5F5;border-radius:8px;font-size:11px;color:var(--gray)">
+          ※ 予想給与は登録時給をもとにした概算です
+        </div>
+      </div>
+
+      <!-- 扶養枠アラート -->
+      <div id="fuyouAlert" style="display:none"></div>
+
+      <!-- 確定/仮の内訳 -->
+      <div style="background:white;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(107,58,42,0.08);display:flex;gap:12px">
+        <div style="flex:1;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--green)" id="myShiftConfirmed">0</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">✅ 確定</div>
+        </div>
+        <div style="width:1px;background:var(--gray-border)"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--warn)" id="myShiftTentative">0</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">🕐 仮</div>
+        </div>
+        <div style="width:1px;background:var(--gray-border)"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--red)" id="myShiftOff">0</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">🙏 休み申請</div>
+        </div>
+      </div>
+
+      <!-- シフト一覧 -->
+      <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(107,58,42,0.08)">
+        <div style="padding:12px 16px;font-size:13px;font-weight:700;color:var(--brown);border-bottom:1px solid var(--gray-border);background:var(--brown-pale)">
+          シフト一覧
+        </div>
+        <div id="myShiftList"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 交代申請モーダル -->
+<div class="modal-overlay" id="swapModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>シフト交代申請</h3><button class="modal-close" onclick="closeSwapModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">交代してほしい自分のシフト</label>
+        <select class="form-control" id="sw-myshift" onchange="onMyShiftSelected()">
+          <option value="">選択してください...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">交代をお願いしたいスタッフ</label>
+        <select class="form-control" id="sw-target" onchange="loadTargetShifts()">
+          <option value="">選択してください...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">相手のシフト（任意・空欄でも申請可）</label>
+        <select class="form-control" id="sw-targetshift">
+          <option value="">選択しない（出てもらえるか聞くだけ）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メッセージ（任意）</label>
+        <textarea class="form-control" id="sw-message" rows="3" placeholder="例：急用ができてしまいました。よろしければ代わっていただけますか？" style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeSwapModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitSwapRequest()">申請する</button>
+    </div>
+  </div>
+</div>
+
+<!-- お知らせ投稿モーダル -->
+<div class="modal-overlay" id="noticeModal">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="noticeModalTitle">お知らせ投稿</h3><button class="modal-close" onclick="closeNoticeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">タイトル <span style="color:var(--red);font-size:11px">必須</span></label>
+        <input type="text" class="form-control" id="nf-title" placeholder="例：来月のシフト提出のお願い">
+      </div>
+      <div class="form-group">
+        <label class="form-label">本文</label>
+        <textarea class="form-control" id="nf-body" rows="4" placeholder="詳細を入力..." style="resize:vertical"></textarea>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="nf-important" style="width:16px;height:16px">
+          <span style="font-size:13px;font-weight:600;color:var(--red)">⚠️ 重要なお知らせとして表示</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-del" id="noticeDelBtn" onclick="deleteNotice()" style="display:none">削除</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="closeNoticeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveNotice()">投稿する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理者用シフトモーダル -->
+<div class="modal-overlay" id="shiftModal">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="shiftModalTitle">シフト追加</h3><button class="modal-close" onclick="closeShiftModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">日付</label><select class="form-control" id="sf-date"></select></div>
+      <div class="form-group"><label class="form-label">スタッフ</label><select class="form-control" id="sf-staff"></select></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">出勤</label><select class="form-control" id="sf-start"></select></div>
+        <div class="form-group"><label class="form-label">退勤</label><select class="form-control" id="sf-end"></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">部門</label>
+        <div class="radio-row">
+          <div class="radio-item"><input type="radio" name="sf-dept" id="sf-ds" value="s"><label class="radio-lbl ls" for="sf-ds">販売</label></div>
+          <div class="radio-item"><input type="radio" name="sf-dept" id="sf-dm" value="m"><label class="radio-lbl lm" for="sf-dm">製造</label></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">ステータス</label>
+        <div class="status-row">
+          <button class="status-btn t-active" id="sfBtnT" onclick="setShiftStatus('仮')">仮</button>
+          <button class="status-btn" id="sfBtnC" onclick="setShiftStatus('確定')">確定</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-del" id="sfDelBtn" onclick="deleteShift()" style="display:none">削除</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="closeShiftModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveShift()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- テンプレートモーダル -->
+<div class="modal-overlay" id="tmplModal">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="tmplModalTitle">テンプレート追加</h3><button class="modal-close" onclick="closeTmplModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">スタッフ</label><select class="form-control" id="tf-staff"></select></div>
+      <div class="form-group"><label class="form-label">曜日（複数選択可）</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div><input type="checkbox" id="td0" value="0"><label for="td0" style="margin-left:3px;font-size:13px">日</label></div>
+          <div><input type="checkbox" id="td1" value="1"><label for="td1" style="margin-left:3px;font-size:13px">月</label></div>
+          <div><input type="checkbox" id="td2" value="2"><label for="td2" style="margin-left:3px;font-size:13px">火</label></div>
+          <div><input type="checkbox" id="td3" value="3"><label for="td3" style="margin-left:3px;font-size:13px">水</label></div>
+          <div><input type="checkbox" id="td4" value="4"><label for="td4" style="margin-left:3px;font-size:13px">木</label></div>
+          <div><input type="checkbox" id="td5" value="5"><label for="td5" style="margin-left:3px;font-size:13px">金</label></div>
+          <div><input type="checkbox" id="td6" value="6"><label for="td6" style="margin-left:3px;font-size:13px">土</label></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">出勤</label><select class="form-control" id="tf-start"></select></div>
+        <div class="form-group"><label class="form-label">退勤</label><select class="form-control" id="tf-end"></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">部門</label>
+        <div class="radio-row">
+          <div class="radio-item"><input type="radio" name="tf-dept" id="tf-ds" value="s"><label class="radio-lbl ls" for="tf-ds">販売</label></div>
+          <div class="radio-item"><input type="radio" name="tf-dept" id="tf-dm" value="m"><label class="radio-lbl lm" for="tf-dm">製造</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-del" id="tfDelBtn" onclick="deleteTmpl()" style="display:none">削除</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="closeTmplModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveTmpl()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- スタッフ用一括設定モーダル -->
+<div class="modal-overlay" id="bulkModal" style="align-items:flex-end">
+  <div class="modal-bottom">
+    <div class="modal-handle"></div>
+    <h3 id="bulkModalTitle" style="font-size:16px;font-weight:700;color:var(--brown);margin-bottom:12px;text-align:center">まとめて設定</h3>
+    <div class="dates-preview" id="datesPreview" style="display:none"></div>
+    <div class="choice-grid">
+      <button class="choice-btn" id="choiceWork" onclick="setBulkState('work')"><div class="choice-icon2">✅</div><div class="choice-lbl2">出勤できる</div></button>
+      <button class="choice-btn" id="choiceOff" onclick="setBulkState('off')"><div class="choice-icon2">🙏</div><div class="choice-lbl2">お休み希望</div></button>
+    </div>
+    <div class="time-sel-area" id="timeSelArea">
+      <div class="time-sel-lbl">⏰ 出勤できる時間帯（任意）</div>
+      <div class="time-sel-row">
+        <select id="bStartTime"></select>
+        <span style="font-size:13px;color:var(--gray)">〜</span>
+        <select id="bEndTime"></select>
+      </div>
+    </div>
+    <button class="btn-clear2" onclick="setBulkState(null)">🗑 クリア</button>
+    <button class="btn-modal-ok" onclick="applyBulk()">この設定を適用する</button>
+  </div>
+</div>
+
+<!-- 月間ポップアップ -->
+<div class="popup-overlay" id="monthlyPopup">
+  <div class="popup">
+    <div class="popup-hd"><h3 id="popupTitle">詳細</h3><button class="popup-close" onclick="closePopup()">✕</button></div>
+    <div class="popup-body" id="popupBody"></div>
+  </div>
+</div>
+
+
+  <!-- スキルモーダル -->
+  <div class="modal-overlay" id="skillModal">
+    <div class="modal">
+      <div class="modal-hd"><h3 id="skillModalTitle">スキル登録</h3><button class="modal-close" onclick="closeSkillModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">スタッフ</label>
+          <select class="form-control" id="sk-staff" onchange="filterSkillMasters()"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">スキル</label>
+          <select class="form-control" id="sk-master">
+            <option value="">選択してください...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">レベル</label>
+          <div style="display:flex;gap:8px">
+            <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:2px solid var(--gray-border);border-radius:8px;cursor:pointer">
+              <input type="radio" name="sk-level" value="1" checked> <span style="font-size:13px">△ 見習い</span>
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:2px solid var(--gray-border);border-radius:8px;cursor:pointer">
+              <input type="radio" name="sk-level" value="2"> <span style="font-size:13px">〇 できる</span>
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:2px solid var(--gray-border);border-radius:8px;cursor:pointer">
+              <input type="radio" name="sk-level" value="3"> <span style="font-size:13px">◎ 得意</span>
+            </label>
+          </div>
+        </div>
+        <div id="skillMasterMgmt" style="border-top:1px solid var(--gray-border);padding-top:12px;margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:6px">＋ スキルマスタに新規追加</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="sk-newmaster" class="form-control" placeholder="新しいスキル名..." style="flex:1">
+            <select id="sk-newdept" class="form-control" style="width:80px">
+              <option value="s">販売</option>
+              <option value="m">製造</option>
+              <option value="both">共通</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="addSkillMaster()" style="white-space:nowrap">追加</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn-del" id="skillDelBtn" onclick="deleteSkill()" style="display:none">削除</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn btn-outline" onclick="closeSkillModal()">キャンセル</button>
+          <button class="btn btn-primary" onclick="saveSkill()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 有給申請モーダル（スタッフ用） -->
+  <div class="modal-overlay" id="leaveRequestModal">
+    <div class="modal">
+      <div class="modal-hd"><h3>有給申請</h3><button class="modal-close" onclick="closeLeaveRequestModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">申請日</label>
+          <input type="date" class="form-control" id="lr-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">理由（任意）</label>
+          <textarea class="form-control" id="lr-reason" rows="3" placeholder="例：私用のため" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-outline" onclick="closeLeaveRequestModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="submitLeaveRequest()">申請する</button>
+      </div>
+    </div>
+  </div>
+
+<div class="toast" id="toast"></div>
+<!-- 一括バー -->
+<div class="bulk-bar" id="bulkBar">
+  <div class="bulk-count" id="bulkCount">0日選択中</div>
+  <button class="btn-bulk-cancel" onclick="clearSelecting()">✕</button>
+  <button class="btn-bulk-set" onclick="openBulkModal()">まとめて設定 ›</button>
+</div>
+
+<script>
+const SB_URL = 'https://vgmcmwkkeqocatjojqwc.supabase.co';
+const SB_KEY = 'sb_publishable_Nnv1slTBR1KdfjzJioRcHA_93qRQtuP';
+const DOW = ['日','月','火','水','木','金','土'];
+const HS = 5, HE = 22, HOURS = HE - HS;
+
+let mode = null; // 'admin' | 'staff'
+let currentStaff = null;
+let adminStoreId = '';
+let staffList = [], allShifts = [], templates = [], requests = [];
+
+// 日付系
+let mYear, mMonth; // 月間
+let wStart = new Date(); // 週間
+let dDate = new Date(); // 日別
+let sYear, sMonth; // スタッフ予定
+
+let editingShiftId = null, shiftModalStatus = '仮';
+let editingTmplId = null;
+let staffSelections = {};
+let selectingDates = new Set();
+let bulkState = null;
+
+async function api(path, options = {}) {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': options.prefer || 'return=representation' },
+    ...options
+  });
+  if (!res.ok) throw new Error((await res.json()).message);
+  return res.status === 204 ? null : res.json();
+}
+
+function fmt(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtT(h) { const hh=Math.floor(h),mm=Math.round((h-hh)*60); return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; }
+
+async function init() {
+  const t = new Date();
+  mYear=t.getFullYear(); mMonth=t.getMonth()+1;
+  wStart = getMonday(t);
+  dDate = new Date(t); dDate.setHours(0,0,0,0);
+  const next = new Date(t); next.setMonth(next.getMonth()+1);
+  sYear=next.getFullYear(); sMonth=next.getMonth()+1;
+
+  // 時刻セレクト生成
+  ['sf-start','sf-end','tf-start','tf-end','bStartTime','bEndTime'].forEach(id => {
+    const el = document.getElementById(id);
+    for (let h=HS; h<=HE; h++) for (let m of [0,30]) {
+      const val = h+m/60;
+      el.innerHTML += `<option value="${val}">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</option>`;
+    }
+  });
+  document.getElementById('sf-start').value = 8;
+  document.getElementById('sf-end').value = 17;
+  document.getElementById('tf-start').value = 8;
+  document.getElementById('tf-end').value = 15;
+  document.getElementById('bStartTime').value = 8;
+  document.getElementById('bEndTime').value = 15;
+
+  const next2 = new Date(); next2.setMonth(next2.getMonth()+1);
+  document.getElementById('genMonth').value = `${next2.getFullYear()}-${String(next2.getMonth()+1).padStart(2,'0')}`;
+
+  const stores = await api('stores?order=id');
+  document.getElementById('adminStoreSelect').innerHTML = stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  adminStoreId = stores[0]?.id || '';
+
+  // スタッフ一覧（ログイン用）
+  const allStaff = await api('staff?active=eq.true&order=store_id,dept,name');
+  const storeMap = {};
+  stores.forEach(s => storeMap[s.id] = s.name);
+  window._allStaff = allStaff;
+  window._storeMap = storeMap;
+  const sf = document.getElementById('loginStoreFilter');
+  sf.innerHTML = '<option value="">-- 店舗を選択してください --</option>' +
+    stores.map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('');
+  document.getElementById('loginStaffList').innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">↑ 店舗を選択してください</div>';
+}
+
+// ===== ログイン =====
+function filterStaffList() {
+  var storeId = document.getElementById('loginStoreFilter').value;
+  var allStaff = window._allStaff || [];
+  if (!storeId) {
+    document.getElementById('loginStaffList').innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">↑ 店舗を選択してください</div>';
+    return;
+  }
+  var slist = allStaff.filter(function(s){ return s.store_id === storeId; });
+  if (!slist.length) {
+    document.getElementById('loginStaffList').innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">スタッフが登録されていません</div>';
+    return;
+  }
+  var byDept = {s:[], m:[]};
+  slist.forEach(function(s){ if(byDept[s.dept]) byDept[s.dept].push(s); });
+  var html = '';
+  [['s','販売'],['m','製造']].forEach(function(pair){
+    var dept = pair[0], lbl = pair[1];
+    if (!byDept[dept].length) return;
+    html += '<div style="padding:6px 14px;font-size:11px;font-weight:600;color:#999;background:#FAFAFA;border-bottom:1px solid #F0F0F0">' + lbl + '</div>';
+    byDept[dept].forEach(function(s){
+      var rl = s.role==='GM'?'GM':s.role==='manager'?'マネージャー':'スタッフ';
+      var onclick = "loginStaff('" + s.id + "','" + s.name + "','" + s.dept + "','" + rl + "','" + s.store_id + "')";
+      html += '<div class="staff-item" onclick="' + onclick + '">' +
+        '<div class="staff-av av-' + dept + '">' + s.name.charAt(0) + '</div>' +
+        '<div class="staff-info"><div class="staff-nm">' + s.name + '</div><div class="staff-rl">' + lbl + ' / ' + rl + '</div></div>' +
+        '<span class="staff-arr">›</span></div>';
+    });
+  });
+  document.getElementById('loginStaffList').innerHTML = html;
+}
+
+async function loginAdmin() {
+  adminStoreId = document.getElementById('adminStoreSelect').value;
+  if (!adminStoreId) return;
+  mode = 'admin';
+  document.getElementById('headerUser').textContent = `管理者：${document.getElementById('adminStoreSelect').options[document.getElementById('adminStoreSelect').selectedIndex].text}`;
+  document.getElementById('logoutBtn').style.display = '';
+  showScreen('screen-admin');
+  staffList = await api(`staff?store_id=eq.${adminStoreId}&active=eq.true&order=dept,name`);
+  // leaveYear初期化
+  const yearSel = document.getElementById('leaveYear');
+  if (yearSel) {
+    const y = new Date().getFullYear();
+    yearSel.innerHTML = [y-1,y,y+1].map(yr => '<option value="' + yr + '"' + (yr===y?' selected':'') + '>' + yr + '</option>').join('');
+  }
+  updateShiftStaffSelect();
+  updateTmplStaffSelect();
+  await loadAdminData();
+}
+
+function loginStaff(id, name, dept, role, storeId) {
+  currentStaff = { id, name, dept, role, storeId };
+  adminStoreId = storeId;
+  mode = 'staff';
+  document.getElementById('headerUser').textContent = `${name}さん`;
+  document.getElementById('logoutBtn').style.display = '';
+  showScreen('screen-staff');
+  staffTab('schedule');
+  loadStaffData();
+}
+
+function logout() {
+  mode = null; currentStaff = null;
+  staffSelections = {}; selectingDates = new Set();
+  document.getElementById('headerUser').textContent = '';
+  document.getElementById('logoutBtn').style.display = 'none';
+  showScreen('screen-login');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== 管理者タブ =====
+function adminTab(tab) {
+  ['monthly','weekly','daily','template','notice','swap','staffmgr','skillmap','leave'].forEach(t => {
+    const el=document.getElementById('admin-'+t);
+    if(el) el.style.display = t===tab?'':'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach((el,i) => {
+    el.classList.toggle('active', ['monthly','weekly','daily','template','notice','swap','staffmgr','skillmap','leave'][i]===tab);
+  });
+  if (tab==='monthly') renderMonthly();
+  else if (tab==='weekly') renderWeekly();
+  else if (tab==='daily') renderDaily();
+  else if (tab==='template') loadTemplates();
+  else if (tab==='notice') loadAdminNotices();
+  else if (tab==='swap') loadAdminSwaps();
+  else if (tab==='staffmgr') loadStaffMgr();
+  else if (tab==='skillmap') loadSkillMap();
+  else if (tab==='leave') loadLeave();
+}
+
+async function loadAdminData() {
+  const from = fmt(new Date(mYear, mMonth-1, 1));
+  const to = fmt(new Date(mYear, mMonth, 0));
+  allShifts = await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&order=date,start_hour`);
+  requests = await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
+  renderMonthly();
+}
+
+// ===== 月間 =====
+function changeMonth(d) { mMonth+=d; if(mMonth>12){mMonth=1;mYear++;} if(mMonth<1){mMonth=12;mYear--;} loadAdminData(); }
+function goThisMonth() { const t=new Date(); mYear=t.getFullYear(); mMonth=t.getMonth()+1; loadAdminData(); }
+
+function renderMonthly() {
+  document.getElementById('monthLabel').textContent = `${mYear}年${mMonth}月`;
+  const std_s = parseInt(document.getElementById('stdSales').value)||3;
+  const std_m = parseInt(document.getElementById('stdMfg').value)||4;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(mYear,mMonth-1,1).getDay();
+  const days = new Date(mYear,mMonth,0).getDate();
+  const staffMap = {};
+  staffList.forEach(s=>staffMap[s.id]=s);
+  const shiftByDate = {};
+  allShifts.forEach(sh=>{ if(!shiftByDate[sh.date]) shiftByDate[sh.date]=[]; shiftByDate[sh.date].push(sh); });
+  function bc(count,std) { if(count===0) return 'badge-empty'; if(count>=std) return 'badge-ok'; if(count===std-1) return 'badge-warn'; return 'badge-short'; }
+  let html = `<table class="cal-table"><thead><tr>
+    <th class="th-sun">日</th><th class="th-wk">月</th><th class="th-wk">火</th><th class="th-wk">水</th><th class="th-wk">木</th><th class="th-wk">金</th><th class="th-sat">土</th>
+  </tr></thead><tbody><tr>`;
+  for(let i=0;i<firstDay;i++) html+=`<td class="cal-cell other-month"></td>`;
+  let col=firstDay;
+  for(let d=1;d<=days;d++) {
+    const date=new Date(mYear,mMonth-1,d);
+    const dow=date.getDay();
+    const isToday=date.getTime()===today.getTime();
+    const ds=fmt(date);
+    const dayShifts=shiftByDate[ds]||[];
+    const sc=[...new Set(dayShifts.filter(s=>s.dept==='s').map(s=>s.staff_id))].length;
+    const mc=[...new Set(dayShifts.filter(s=>s.dept==='m').map(s=>s.staff_id))].length;
+    const allSt=[...new Set(dayShifts.map(s=>s.staff_id))];
+    const shown=allSt.slice(0,4), more=allSt.length-4;
+    const chips=shown.map(id=>{const s=staffMap[id];return s?`<span class="name-chip chip-${s.dept}">${s.name}</span>`:''}).join('')+(more>0?`<span class="more-chip">+${more}</span>`:'');
+    const dowC=dow===0?'sunday':dow===6?'saturday':'';
+    const dayN=isToday?`<span class="today-badge">${d}</span>`:`<span>${d}</span>`;
+    html+=`<td class="cal-cell ${dowC}${isToday?' today-cell':''}" onclick="openPopup('${ds}',${d},${dow})">
+      <div class="day-num">${dayN}</div>
+      <div class="count-row-m"><span class="count-badge ${bc(sc,std_s)}">販${sc}</span><span class="count-badge ${bc(mc,std_m)}">製${mc}</span></div>
+      <div class="name-list-m">${chips}</div></td>`;
+    col++;
+    if(col%7===0&&d<days) html+='</tr><tr>';
+  }
+  const rem=7-(col%7); if(rem<7) for(let i=0;i<rem;i++) html+=`<td class="cal-cell other-month"></td>`;
+  html+='</tr></tbody></table>';
+  document.getElementById('monthlyCalArea').innerHTML=html;
+}
+
+function openPopup(ds, d, dow) {
+  const dayShifts=allShifts.filter(s=>s.date===ds);
+  const staffMap={}; staffList.forEach(s=>staffMap[s.id]=s);
+  const ss=dayShifts.filter(s=>s.dept==='s'), ms=dayShifts.filter(s=>s.dept==='m');
+  document.getElementById('popupTitle').textContent=`${mMonth}月${d}日（${DOW[dow]}）`;
+  function rows(shs) {
+    if(!shs.length) return `<div class="popup-empty2">シフトなし</div>`;
+    return shs.map(sh=>{
+      const s=staffMap[sh.staff_id]; const nm=s?s.name:sh.staff_id;
+      return `<div class="popup-row"><div class="status-dot2 ${sh.status==='確定'?'dot-c':'dot-t'}"></div><span>${nm}</span><span class="popup-time">${fmtT(sh.start_hour)}〜${fmtT(sh.end_hour)}（${sh.status}）</span></div>`;
+    }).join('');
+  }
+  document.getElementById('popupBody').innerHTML=`
+    <div style="margin-bottom:12px"><div class="popup-sec-title title-s" style="background:var(--sales-light);color:var(--sales)">販売 ${[...new Set(ss.map(s=>s.staff_id))].length}名</div>${rows(ss)}</div>
+    <div><div class="popup-sec-title title-m" style="background:var(--mfg-light);color:var(--mfg)">製造 ${[...new Set(ms.map(s=>s.staff_id))].length}名</div>${rows(ms)}</div>`;
+  document.getElementById('monthlyPopup').classList.add('open');
+}
+function closePopup() { document.getElementById('monthlyPopup').classList.remove('open'); }
+
+// ===== 週間 =====
+function getMonday(d) { const dt=new Date(d); const day=dt.getDay(); dt.setDate(dt.getDate()+(day===0?-6:1-day)); dt.setHours(0,0,0,0); return dt; }
+function getWeekDates() { return Array.from({length:7},(_,i)=>{const d=new Date(wStart);d.setDate(d.getDate()+i);return d;}); }
+function changeWeek(d) { wStart.setDate(wStart.getDate()+d*7); renderWeekly(); }
+function goThisWeek() { wStart=getMonday(new Date()); renderWeekly(); }
+
+async function renderWeekly() {
+  const dates=getWeekDates();
+  const from=fmt(dates[0]),to=fmt(dates[6]);
+  document.getElementById('weekLabel').textContent=`${dates[0].getMonth()+1}月${dates[0].getDate()}日〜${dates[6].getMonth()+1}月${dates[6].getDate()}日`;
+  const wShifts=await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&order=date,start_hour`);
+  const wReqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
+  const today=new Date();today.setHours(0,0,0,0);
+  const staffMap={};staffList.forEach(s=>staffMap[s.id]=s);
+  const sbyds={};wShifts.forEach(sh=>{const k=`${sh.date}_${sh.staff_id}`;if(!sbyds[k])sbyds[k]=[];sbyds[k].push(sh);});
+  const offSet=new Set(wReqs.map(r=>`${r.date}_${r.staff_id}`));
+  // 日付セレクト更新
+  document.getElementById('sf-date').innerHTML=dates.map(d=>`<option value="${fmt(d)}">${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）</option>`).join('');
+  function headRow(){
+    return `<div class="tl-head-row"><div class="th-name">スタッフ</div>${dates.map(d=>{
+      const isT=d.getTime()===today.getTime(),dow=d.getDay();
+      return `<div class="th-day-w${isT?' today-col':''}"><div class="th-dow ${dow===0?'sun':dow===6?'sat':''}">${DOW[dow]}</div><div class="th-date-w">${d.getMonth()+1}/${d.getDate()}</div></div>`;
+    }).join('')}</div>`;
+  }
+  function sRow(s){
+    const cells=dates.map(d=>{
+      const ds=fmt(d),isT=d.getTime()===today.getTime(),k=`${ds}_${s.id}`;
+      const dayS=sbyds[k]||[],isOff=offSet.has(k);
+      let inner='';
+      if(isOff&&!dayS.length) inner=`<div class="shift-pill pill-off2">🙏休み</div>`;
+      else dayS.forEach(sh=>{inner+=`<div class="shift-pill pill-${sh.dept==='s'?'s2':'m2'} ${sh.status==='仮'?'pill-t':''}" onclick="openShiftEdit(${sh.id},event)" title="${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}">${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}</div>`;});
+      return `<div class="td-day-w${isT?' today-col':''}" onclick="openShiftAdd('${ds}','${s.id}','${s.dept}',event)">${inner}</div>`;
+    }).join('');
+    return `<div class="tl-row-w"><div class="td-name-w">${s.name}</div>${cells}</div>`;
+  }
+  function cRow(dept){
+    const std=dept==='s'?3:4;
+    const cells=dates.map(d=>{
+      const ds=fmt(d),isT=d.getTime()===today.getTime();
+      const cnt=[...new Set(wShifts.filter(sh=>sh.date===ds&&sh.dept===dept).map(sh=>sh.staff_id))].length;
+      return `<div class="count-day-w${isT?' today-col':''} ${cnt===0?'cnt-zero':cnt>=std?'cnt-ok':'cnt-short'}">${cnt>0?cnt+'名':'—'}</div>`;
+    }).join('');
+    return `<div class="count-row-w"><div class="count-name-w">合計</div>${cells}</div>`;
+  }
+  function sec(lbl,bc,dept){
+    const sl=staffList.filter(s=>s.dept===dept);
+    return `<div class="section-hd"><span class="sec-badge ${bc}">${lbl}</span><span style="font-size:11px;color:var(--gray)">${sl.length}名</span></div>
+    <div class="tl-grid">${headRow()}${sl.map(sRow).join('')}${cRow(dept)}</div>`;
+  }
+  document.getElementById('weeklyArea').innerHTML=sec('販売','badge-s2','s')+sec('製造','badge-m2','m');
+}
+
+// ===== 日別 =====
+function changeDay(d) { dDate.setDate(dDate.getDate()+d); renderDaily(); }
+function goToday() { dDate=new Date();dDate.setHours(0,0,0,0); renderDaily(); }
+
+async function renderDaily() {
+  document.getElementById('dayLabel').textContent=`${dDate.getMonth()+1}月${dDate.getDate()}日（${DOW[dDate.getDay()]}）`;
+  const ds=fmt(dDate);
+  const dShifts=await api(`shifts?store_id=eq.${adminStoreId}&date=eq.${ds}&order=start_hour`);
+  // 日付セレクト
+  document.getElementById('sf-date').innerHTML=`<option value="${ds}">${dDate.getMonth()+1}月${dDate.getDate()}日（${DOW[dDate.getDay()]}）</option>`;
+  const gridLines=Array.from({length:HOURS+1},(_,i)=>`<div class="day-grid-line" style="left:${(i/HOURS)*100}%"></div>`).join('');
+  function sec(lbl,bc,dept){
+    const sl=staffList.filter(s=>s.dept===dept);
+    const rows=sl.map(s=>{
+      const myS=dShifts.filter(sh=>sh.staff_id===s.id);
+      const bars=myS.map(sh=>{
+        const l=((sh.start_hour-HS)/HOURS)*100, w=((sh.end_hour-sh.start_hour)/HOURS)*100;
+        return `<div class="day-shift-bar day-bar-${sh.dept} ${sh.status==='仮'?'day-bar-t':''}" style="left:${l}%;width:${w}%" onclick="openShiftEdit(${sh.id},event)" title="${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}（${sh.status}）"><span style="pointer-events:none;font-size:9px;padding:0 3px">${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}</span></div>`;
+      }).join('');
+      return `<div class="day-tl-row"><div class="day-td-name"><div class="day-staff-nm">${s.name}</div></div><div class="day-td-bar" onclick="openShiftAdd('${ds}','${s.id}','${s.dept}',event)">${gridLines}${bars}</div></div>`;
+    }).join('');
+    const cnt=[...new Set(dShifts.filter(sh=>sh.dept===dept).map(sh=>sh.staff_id))].length;
+    const hours=Array.from({length:HOURS+1},(_,i)=>`<div class="day-th-hour">${HS+i}</div>`).join('');
+    return `<div class="day-section-hd"><span class="sec-badge ${bc}">${lbl}</span><span style="font-size:11px;color:var(--gray)">${cnt}名出勤</span></div>
+    <div class="day-tl-grid">
+      <div class="day-tl-head"><div class="day-th-name">スタッフ</div><div class="day-th-hours">${hours}</div></div>
+      ${rows}
+      <div class="day-count-row"><div class="day-count-name">合計</div><div class="day-count-val" style="color:${cnt>0?'var(--sales)':'var(--gray)'}">${cnt}名</div></div>
+    </div>`;
+  }
+  document.getElementById('dailyArea').innerHTML=sec('販売','badge-s2','s')+sec('製造','badge-m2','m');
+}
+
+// ===== シフトモーダル =====
+function updateShiftStaffSelect(){document.getElementById('sf-staff').innerHTML=staffList.map(s=>`<option value="${s.id}">${s.name}（${s.dept==='s'?'販売':'製造'}）</option>`).join('');}
+function openShiftModal(){editingShiftId=null;document.getElementById('shiftModalTitle').textContent='シフト追加';document.getElementById('sfDelBtn').style.display='none';document.getElementById('sf-start').value=8;document.getElementById('sf-end').value=17;document.getElementById('sf-ds').checked=true;setShiftStatus('仮');document.getElementById('shiftModal').classList.add('open');}
+function openShiftAdd(ds,sid,dept,e){if(e.target.classList.contains('shift-pill')||e.target.classList.contains('day-shift-bar'))return;editingShiftId=null;document.getElementById('shiftModalTitle').textContent='シフト追加';document.getElementById('sfDelBtn').style.display='none';document.getElementById('sf-date').value=ds;document.getElementById('sf-staff').value=sid;document.getElementById('sf-start').value=8;document.getElementById('sf-end').value=17;document.getElementById(dept==='s'?'sf-ds':'sf-dm').checked=true;setShiftStatus('仮');document.getElementById('shiftModal').classList.add('open');}
+async function openShiftEdit(id,e){e.stopPropagation();const sh=await api(`shifts?id=eq.${id}`).then(r=>r[0]);if(!sh)return;editingShiftId=id;document.getElementById('shiftModalTitle').textContent='シフト編集';document.getElementById('sfDelBtn').style.display='block';document.getElementById('sf-date').value=sh.date;document.getElementById('sf-staff').value=sh.staff_id;document.getElementById('sf-start').value=sh.start_hour;document.getElementById('sf-end').value=sh.end_hour;document.getElementById(sh.dept==='s'?'sf-ds':'sf-dm').checked=true;setShiftStatus(sh.status||'仮');document.getElementById('shiftModal').classList.add('open');}
+function setShiftStatus(s){shiftModalStatus=s;document.getElementById('sfBtnT').className='status-btn'+(s==='仮'?' t-active':'');document.getElementById('sfBtnC').className='status-btn'+(s==='確定'?' c-active':'');}
+function closeShiftModal(){document.getElementById('shiftModal').classList.remove('open');}
+async function saveShift(){
+  const ds=document.getElementById('sf-date').value,sid=document.getElementById('sf-staff').value;
+  const sh=parseFloat(document.getElementById('sf-start').value),eh=parseFloat(document.getElementById('sf-end').value);
+  const dept=document.querySelector('input[name="sf-dept"]:checked')?.value;
+  if(!dept) return showToast('部門を選択してください','error');
+  if(eh<=sh) return showToast('退勤時刻は出勤後にしてください','error');
+  const data={store_id:adminStoreId,staff_id:sid,date:ds,start_hour:sh,end_hour:eh,dept,status:shiftModalStatus};
+  try{if(editingShiftId){await api(`shifts?id=eq.${editingShiftId}`,{method:'PATCH',body:JSON.stringify(data)});showToast('更新しました','success');}else{await api('shifts',{method:'POST',body:JSON.stringify(data)});showToast('追加しました','success');}closeShiftModal();
+  const tab=document.querySelector('.nav-tab.active')?.textContent;
+  if(tab?.includes('週')) await renderWeekly(); else await renderDaily();}catch(e){showToast('エラー:'+e.message,'error');}
+}
+async function deleteShift(){if(!editingShiftId||!confirm('削除しますか？'))return;try{await api(`shifts?id=eq.${editingShiftId}`,{method:'DELETE',prefer:'return=minimal'});showToast('削除しました','success');closeShiftModal();const tab=document.querySelector('.nav-tab.active')?.textContent;if(tab?.includes('週')) await renderWeekly(); else await renderDaily();}catch(e){showToast('エラー:'+e.message,'error');}}
+async function confirmWeek(){const dates=getWeekDates(),from=fmt(dates[0]),to=fmt(dates[6]);const t=await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.仮`);if(!t.length){showToast('確定待ちなし');return;}if(!confirm(`${t.length}件確定しますか？`))return;await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.仮`,{method:'PATCH',body:JSON.stringify({status:'確定'})});showToast(`✅ ${t.length}件を確定しました`,'success');await renderWeekly();}
+async function confirmDay(){const ds=fmt(dDate);const t=await api(`shifts?store_id=eq.${adminStoreId}&date=eq.${ds}&status=eq.仮`);if(!t.length){showToast('確定待ちなし');return;}if(!confirm(`${t.length}件確定しますか？`))return;await api(`shifts?store_id=eq.${adminStoreId}&date=eq.${ds}&status=eq.仮`,{method:'PATCH',body:JSON.stringify({status:'確定'})});showToast(`✅ ${t.length}件を確定しました`,'success');await renderDaily();}
+
+// ===== テンプレート =====
+function updateTmplStaffSelect(){document.getElementById('tf-staff').innerHTML=staffList.map(s=>`<option value="${s.id}">${s.name}（${s.dept==='s'?'販売':'製造'}）</option>`).join('');}
+async function loadTemplates(){try{
+  templates=await api(`shift_templates?store_id=eq.${adminStoreId}&order=staff_id`);
+  // 締切日を反映
+  const sets=await api(`settings?store_id=eq.${adminStoreId}`);
+  if(sets[0]?.deadline_day) document.getElementById('deadlineDayInput').value=sets[0].deadline_day;
+  renderTemplates();}catch(e){showToast('エラー:'+e.message,'error');}}
+function renderTemplates(){
+  if(!templates.length){document.getElementById('tmplListArea').innerHTML='<div class="tmpl-empty">テンプレートなし。＋追加から登録してください。</div>';return;}
+  const sm={};staffList.forEach(s=>sm[s.id]=s);
+  const rows=templates.map(t=>{
+    const s=sm[t.staff_id]||{name:t.staff_id,dept:'s'};
+    const dows=DOW.map((l,i)=>`<span class="dow-badge ${t.dow===i?(i===0?'dow-active-sun':i===6?'dow-active-sat':'dow-active-wk'):'dow-inactive'}">${l}</span>`).join('');
+    return `<tr><td><strong>${s.name}</strong></td><td><span class="dept-badge dept-${t.dept}2">${t.dept==='s'?'販売':'製造'}</span></td>
+    <td><div class="dow-badges">${dows}</div></td><td>${fmtT(t.start_hour)}〜${fmtT(t.end_hour)}</td>
+    <td><span class="status-badge st-active">有効</span></td>
+    <td><button class="btn btn-outline btn-sm" onclick="openTmplEdit(${t.id})">編集</button></td></tr>`;
+  }).join('');
+  document.getElementById('tmplListArea').innerHTML=`<table class="tmpl-table"><thead><tr><th>スタッフ</th><th>部門</th><th>曜日</th><th>時間</th><th>状態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function openTmplModal(){editingTmplId=null;document.getElementById('tmplModalTitle').textContent='テンプレート追加';document.getElementById('tfDelBtn').style.display='none';document.querySelectorAll('[id^="td"]').forEach(c=>c.checked=false);document.getElementById('tf-start').value=8;document.getElementById('tf-end').value=15;document.getElementById('tf-ds').checked=true;document.getElementById('tmplModal').classList.add('open');}
+function openTmplEdit(id){const t=templates.find(x=>x.id===id);if(!t)return;editingTmplId=id;document.getElementById('tmplModalTitle').textContent='テンプレート編集';document.getElementById('tfDelBtn').style.display='block';document.getElementById('tf-staff').value=t.staff_id;document.querySelectorAll('[id^="td"]').forEach(c=>c.checked=parseInt(c.value)===t.dow);document.getElementById('tf-start').value=t.start_hour;document.getElementById('tf-end').value=t.end_hour;document.getElementById(t.dept==='s'?'tf-ds':'tf-dm').checked=true;document.getElementById('tmplModal').classList.add('open');}
+function closeTmplModal(){document.getElementById('tmplModal').classList.remove('open');}
+async function saveTmpl(){
+  const sid=document.getElementById('tf-staff').value,sh=parseFloat(document.getElementById('tf-start').value),eh=parseFloat(document.getElementById('tf-end').value);
+  const dept=document.querySelector('input[name="tf-dept"]:checked')?.value;
+  const dows=[...document.querySelectorAll('[id^="td"]:checked')].map(c=>parseInt(c.value));
+  if(!sid)return showToast('スタッフを選択してください','error');
+  if(!dows.length)return showToast('曜日を選択してください','error');
+  if(eh<=sh)return showToast('退勤は出勤後にしてください','error');
+  try{if(editingTmplId){await api(`shift_templates?id=eq.${editingTmplId}`,{method:'PATCH',body:JSON.stringify({staff_id:sid,dow:dows[0],start_hour:sh,end_hour:eh,dept,active:true})});showToast('更新しました','success');}
+  else{const recs=dows.map(dow=>({store_id:adminStoreId,staff_id:sid,dow,start_hour:sh,end_hour:eh,dept,active:true}));await api('shift_templates',{method:'POST',body:JSON.stringify(recs)});showToast(`${dows.length}件追加しました`,'success');}
+  closeTmplModal();await loadTemplates();}catch(e){showToast('エラー:'+e.message,'error');}
+}
+async function deleteTmpl(){if(!editingTmplId||!confirm('削除しますか？'))return;await api(`shift_templates?id=eq.${editingTmplId}`,{method:'DELETE',prefer:'return=minimal'});showToast('削除しました','success');closeTmplModal();await loadTemplates();}
+async function saveDeadline(){
+  const day = parseInt(document.getElementById('deadlineDayInput').value);
+  if (!day || day < 1 || day > 28) return showToast('1〜28の日付を入力してください','error');
+  try {
+    await api(`settings?store_id=eq.${adminStoreId}`, {method:'PATCH', body:JSON.stringify({deadline_day:day})});
+    showToast(`✅ 締切日を毎月${day}日に設定しました`,'success');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function generateShifts(){
+  const ms=document.getElementById('genMonth').value;if(!ms){showToast('月を選択してください','error');return;}
+  const [y,m]=ms.split('-').map(Number),days=new Date(y,m,0).getDate();
+  if(!confirm(`${y}年${m}月のシフトをテンプレートから生成しますか？`))return;
+  try{const from=`${y}-${String(m).padStart(2,'0')}-01`,to=`${y}-${String(m).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
+  const existing=await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}`);
+  const exKeys=new Set(existing.map(s=>`${s.staff_id}_${s.date}`));
+  const reqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
+  const rqKeys=new Set(reqs.map(r=>`${r.staff_id}_${r.date}`));
+  const news=[];
+  for(let d=1;d<=days;d++){const dt=new Date(y,m-1,d),dow=dt.getDay(),ds=fmt(dt);
+    templates.filter(t=>t.dow===dow&&t.active).forEach(t=>{const k=`${t.staff_id}_${ds}`;if(!exKeys.has(k)&&!rqKeys.has(k)) news.push({store_id:adminStoreId,staff_id:t.staff_id,date:ds,start_hour:t.start_hour,end_hour:t.end_hour,dept:t.dept,status:'仮'});});
+  }
+  if(!news.length){showToast('生成できるシフトがありません','error');return;}
+  for(let i=0;i<news.length;i+=100) await api('shifts',{method:'POST',body:JSON.stringify(news.slice(i,i+100))});
+  showToast(`✅ ${news.length}件生成しました`,'success');}catch(e){showToast('エラー:'+e.message,'error');}
+}
+
+// ===== スタッフ画面 =====
+function staffTab(tab){
+  ['schedule','myshift','notice','swap','leave','today'].forEach(t=>{
+    const el=document.getElementById('staff-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('.staff-nav-tab').forEach((el,i)=>el.classList.toggle('active',
+    (i===0&&tab==='schedule')||(i===1&&tab==='myshift')||(i===2&&tab==='notice')||(i===3&&tab==='swap')||(i===4&&tab==='leave')||(i===5&&tab==='today')));
+  if(tab==='today') renderToday();
+  if(tab==='myshift') renderMyShift();
+  if(tab==='notice') renderNotices();
+  if(tab==='swap') renderSwap();
+  if(tab==='leave') renderLeaveStaff();
+}
+async function loadStaffData(){
+  staffList=await api(`staff?store_id=eq.${currentStaff.storeId}&active=eq.true&order=dept,name`);
+  // 締切チェック
+  try {
+    const settings = await api(`settings?store_id=eq.${currentStaff.storeId}`);
+    const deadlineDay = settings[0]?.deadline_day || 20;
+    const today = new Date();
+    const deadlineDate = document.getElementById('deadlineDate');
+    const banner = document.getElementById('deadlineBanner');
+    if (deadlineDate && banner) {
+      deadlineDate.textContent = `${today.getMonth()+1}月${deadlineDay}日`;
+      if (today.getDate() > deadlineDay) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  } catch(e) {}
+  const from=`${sYear}-${String(sMonth).padStart(2,'0')}-01`,days=new Date(sYear,sMonth,0).getDate(),to=`${sYear}-${String(sMonth).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
+  const ex=await api(`requests?staff_id=eq.${currentStaff.id}&date=gte.${from}&date=lte.${to}`);
+  staffSelections={}; ex.forEach(r=>{staffSelections[r.date]={state:'off'};});
+  renderStaffCal();
+}
+function changeStaffMonth(d){sMonth+=d;if(sMonth>12){sMonth=1;sYear++;}if(sMonth<1){sMonth=12;sYear--;}loadStaffData();}
+function renderStaffCal(){
+  document.getElementById('staffMonthLabel').textContent=`${sYear}年${sMonth}月`;
+  const today=new Date();today.setHours(0,0,0,0);
+  const first=new Date(sYear,sMonth-1,1).getDay(),days=new Date(sYear,sMonth,0).getDate();
+  let html='',wc=0,oc=0;
+  for(let i=0;i<first;i++) html+=`<div class="cal-cell-s empty-s"></div>`;
+  for(let d=1;d<=days;d++){
+    const date=new Date(sYear,sMonth-1,d),dow=date.getDay();
+    const ds=`${sYear}-${String(sMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isPast=date<today,isToday=date.getTime()===today.getTime();
+    const sel=staffSelections[ds],isSel=selectingDates.has(ds);
+    let cc='cal-cell-s';
+    if(dow===0) cc+=' sun-s'; else if(dow===6) cc+=' sat-s';
+    if(isToday) cc+=' today-s';
+    if(isPast) cc+=' past-s';
+    if(!isPast&&isSel) cc+=' selecting-s';
+    else if(sel?.state==='work'){cc+=' work-s';wc++;}
+    else if(sel?.state==='off'){cc+=' off-s';oc++;}
+    let icon='';
+    if(!isSel){if(sel?.state==='work'){icon=`<span class="state-icon-s">✅</span>`;if(sel.startHour&&sel.endHour){const sh=Math.floor(sel.startHour),sm=Math.round((sel.startHour-sh)*60),eh=Math.floor(sel.endHour),em=Math.round((sel.endHour-eh)*60);icon+=`<span class="time-lbl-s">${sh}:${String(sm).padStart(2,'0')}-${eh}:${String(em).padStart(2,'0')}</span>`;}}else if(sel?.state==='off') icon=`<span class="state-icon-s">🙏</span>`;}
+    else icon=`<span class="state-icon-s" style="font-size:16px">☑️</span>`;
+    const ca=isPast?'':`onclick="toggleStaffDate('${ds}')"`;
+    html+=`<div class="${cc}" ${ca}><div class="cal-num-s">${d}</div>${icon}</div>`;
+  }
+  document.getElementById('staffCalGrid').innerHTML=html;
+  document.getElementById('sumWork').textContent=wc;
+  document.getElementById('sumOff').textContent=oc;
+}
+function toggleStaffDate(ds){selectingDates.has(ds)?selectingDates.delete(ds):selectingDates.add(ds);updateBulkBar();renderStaffCal();}
+function updateBulkBar(){const n=selectingDates.size;const bar=document.getElementById('bulkBar');bar.classList.toggle('show',n>0);if(n>0) document.getElementById('bulkCount').textContent=`${n}日選択中`;}
+function clearSelecting(){selectingDates=new Set();updateBulkBar();renderStaffCal();}
+function openBulkModal(){if(!selectingDates.size)return;bulkState=null;updateBulkUI();
+  const sorted=[...selectingDates].sort();const prev=sorted.map(d=>{const dt=new Date(d);return`${sMonth}/${dt.getDate()}（${DOW[dt.getDay()]}）`;}).join('　');
+  const pe=document.getElementById('datesPreview');pe.style.display='block';pe.textContent=`📅 ${prev}`;
+  document.getElementById('bulkModalTitle').textContent=`${selectingDates.size}日をまとめて設定`;
+  const first=sorted[0];if(staffSelections[first]){bulkState=staffSelections[first].state;if(staffSelections[first].startHour) document.getElementById('bStartTime').value=staffSelections[first].startHour;if(staffSelections[first].endHour) document.getElementById('bEndTime').value=staffSelections[first].endHour;updateBulkUI();}
+  document.getElementById('bulkModal').classList.add('open');}
+function setBulkState(s){bulkState=s;updateBulkUI();}
+function updateBulkUI(){document.getElementById('choiceWork').className='choice-btn'+(bulkState==='work'?' sel-work':'');document.getElementById('choiceOff').className='choice-btn'+(bulkState==='off'?' sel-off':'');document.getElementById('timeSelArea').className='time-sel-area'+(bulkState==='work'?' show':'');}
+function applyBulk(){
+  const sh=parseFloat(document.getElementById('bStartTime').value),eh=parseFloat(document.getElementById('bEndTime').value);
+  selectingDates.forEach(ds=>{
+    if(bulkState===null) delete staffSelections[ds];
+    else if(bulkState==='work') staffSelections[ds]={state:'work',...(eh>sh?{startHour:sh,endHour:eh}:{})};
+    else staffSelections[ds]={state:'off'};
+  });
+  const cnt=selectingDates.size,lbl=bulkState==='work'?'出勤':bulkState==='off'?'休み希望':'クリア';
+  selectingDates=new Set();updateBulkBar();document.getElementById('bulkModal').classList.remove('open');renderStaffCal();
+  if(bulkState!==null) showToast(`✅ ${cnt}日を「${lbl}」で設定しました`,'success');
+}
+async function submitSchedule(){
+  if(!currentStaff)return;
+  const offs=Object.entries(staffSelections).filter(([,v])=>v.state==='off');
+  const works=Object.entries(staffSelections).filter(([,v])=>v.state==='work');
+  if(!offs.length&&!works.length){showToast('カレンダーに入力してから送信してください');return;}
+  try{const from=`${sYear}-${String(sMonth).padStart(2,'0')}-01`,days=new Date(sYear,sMonth,0).getDate(),to=`${sYear}-${String(sMonth).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
+  await api(`requests?staff_id=eq.${currentStaff.id}&date=gte.${from}&date=lte.${to}`,{method:'DELETE',prefer:'return=minimal'});
+  if(offs.length) await api('requests',{method:'POST',body:JSON.stringify(offs.map(([date])=>({store_id:currentStaff.storeId,staff_id:currentStaff.id,date,reason:'',status:'未承認'})))});
+  showToast(`✅ 送信完了！出勤${works.length}日・休み希望${offs.length}日`,'success');}catch(e){showToast('エラー:'+e.message,'error');}
+}
+// ===== マイシフト =====
+let myShiftYear, myShiftMonth;
+
+function initMyShift() {
+  const t = new Date();
+  myShiftYear = t.getFullYear();
+  myShiftMonth = t.getMonth() + 1;
+}
+
+function changeMyShiftMonth(delta) {
+  myShiftMonth += delta;
+  if (myShiftMonth > 12) { myShiftMonth = 1; myShiftYear++; }
+  if (myShiftMonth < 1) { myShiftMonth = 12; myShiftYear--; }
+  renderMyShift();
+}
+
+async function renderMyShift() {
+  if (!currentStaff) return;
+  if (!myShiftYear) initMyShift();
+  document.getElementById('myShiftMonthLabel').textContent = myShiftYear + '年' + myShiftMonth + '月';
+  document.getElementById('myShiftList').innerHTML = '<div class="loading">読み込み中...</div>';
+
+  try {
+    const from = myShiftYear + '-' + String(myShiftMonth).padStart(2,'0') + '-01';
+    const days = new Date(myShiftYear, myShiftMonth, 0).getDate();
+    const to = myShiftYear + '-' + String(myShiftMonth).padStart(2,'0') + '-' + String(days).padStart(2,'0');
+
+    const myShifts = await api('shifts?staff_id=eq.' + currentStaff.id + '&date=gte.' + from + '&date=lte.' + to + '&order=date');
+    const myRequests = await api('requests?staff_id=eq.' + currentStaff.id + '&date=gte.' + from + '&date=lte.' + to);
+
+    // サマリー計算
+    const staffInfo = staffList.find(s => s.id === currentStaff.id);
+    const hourlyWage = staffInfo?.hourly_wage || 1000;
+    let totalDays = myShifts.length;
+    let totalHours = 0;
+    let confirmed = 0, tentative = 0;
+    myShifts.forEach(sh => {
+      totalHours += (sh.end_hour - sh.start_hour);
+      if (sh.status === '確定') confirmed++;
+      else tentative++;
+    });
+    const expectedWage = Math.floor(totalHours * hourlyWage);
+
+    document.getElementById('myShiftDays').textContent = totalDays + '日';
+    document.getElementById('myShiftHours').textContent = totalHours + 'h';
+    document.getElementById('myShiftWage').textContent = '¥' + expectedWage.toLocaleString();
+    document.getElementById('myShiftConfirmed').textContent = confirmed;
+    document.getElementById('myShiftTentative').textContent = tentative;
+    document.getElementById('myShiftOff').textContent = myRequests.filter(r=>r.status==='未承認'||r.status==='承認').length;
+
+    // シフト一覧
+    // 扶養枠アラート計算（年間）
+    const fuyouLimit = staffInfo?.fuyou_limit || 0;
+    if (fuyouLimit > 0) {
+      const yearStart = myShiftYear + '-01-01';
+      const yearEnd = myShiftYear + '-12-31';
+      const yearShifts = await api('shifts?staff_id=eq.' + currentStaff.id + '&date=gte.' + yearStart + '&date=lte.' + yearEnd + '&status=eq.確定');
+      let yearHours = 0;
+      yearShifts.forEach(sh => { yearHours += (sh.end_hour - sh.start_hour); });
+      const yearWage = Math.floor(yearHours * hourlyWage);
+      const pct = Math.min(100, Math.round((yearWage / (fuyouLimit * 10000)) * 100));
+      const remaining = (fuyouLimit * 10000) - yearWage;
+
+      let alertColor, alertBg, alertIcon, alertMsg;
+      if (pct >= 95) {
+        alertColor = 'var(--red)'; alertBg = '#FFEBEE';
+        alertIcon = '🚨'; alertMsg = '扶養枠の上限が迫っています！';
+      } else if (pct >= 80) {
+        alertColor = 'var(--warn)'; alertBg = '#FFF8E1';
+        alertIcon = '⚠️'; alertMsg = '扶養枠の80%を超えました。注意が必要です。';
+      } else {
+        alertColor = 'var(--green)'; alertBg = '#E8F5E9';
+        alertIcon = '✅'; alertMsg = '扶養枠内で順調です。';
+      }
+
+      const barColor = pct >= 95 ? 'var(--red)' : pct >= 80 ? 'var(--warn)' : 'var(--green)';
+      document.getElementById('fuyouAlert').style.display = 'block';
+      document.getElementById('fuyouAlert').innerHTML =
+        '<div style="background:' + alertBg + ';border:1.5px solid ' + alertColor + ';border-radius:12px;padding:14px 16px;margin-bottom:12px">' +
+          '<div style="font-size:13px;font-weight:700;color:' + alertColor + ';margin-bottom:8px">' + alertIcon + ' 扶養枠アラート（' + fuyouLimit + '万円）</div>' +
+          '<div style="font-size:12px;color:#555;margin-bottom:10px">' + alertMsg + '</div>' +
+          '<div style="background:white;border-radius:20px;height:12px;overflow:hidden;margin-bottom:6px">' +
+            '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:20px;transition:width 0.5s"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray)">' +
+            '<span>年間給与（確定）：¥' + yearWage.toLocaleString() + '</span>' +
+            '<span>' + pct + '%</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:' + alertColor + ';font-weight:600;margin-top:6px">残り：¥' + remaining.toLocaleString() + '（約' + Math.floor(remaining / hourlyWage) + '時間分）</div>' +
+        '</div>';
+    } else {
+      document.getElementById('fuyouAlert').style.display = 'none';
+    }
+
+    if (!myShifts.length && !myRequests.length) {
+      document.getElementById('myShiftList').innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray);font-size:13px;font-style:italic">この月のシフトはまだありません</div>';
+      return;
+    }
+
+    // 日付ごとにまとめる
+    const byDate = {};
+    myShifts.forEach(sh => { if (!byDate[sh.date]) byDate[sh.date] = {shifts:[], req:null}; byDate[sh.date].shifts.push(sh); });
+    myRequests.forEach(r => { if (!byDate[r.date]) byDate[r.date] = {shifts:[], req:null}; byDate[r.date].req = r; });
+
+    const DOW_JP = ['日','月','火','水','木','金','土'];
+    const html = Object.keys(byDate).sort().map(date => {
+      const d = new Date(date + 'T00:00:00');
+      const dow = d.getDay();
+      const isToday = fmt(new Date()) === date;
+      const dowColor = dow===0?'color:var(--red)':dow===6?'color:var(--sales)':'color:var(--gray)';
+      const item = byDate[date];
+
+      let shiftContent = '';
+      if (item.shifts.length) {
+        shiftContent = item.shifts.map(sh => {
+          const deptLabel = sh.dept === 's' ? '販売' : '製造';
+          const deptColor = sh.dept === 's' ? 'var(--sales)' : 'var(--mfg)';
+          const statusColor = sh.status === '確定' ? 'var(--green)' : 'var(--warn)';
+          const hours = sh.end_hour - sh.start_hour;
+          return '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">' +
+            '<span style="background:' + deptColor + ';color:white;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700">' + deptLabel + '</span>' +
+            '<span style="font-size:13px;font-weight:600">' + fmtT(sh.start_hour) + '〜' + fmtT(sh.end_hour) + '</span>' +
+            '<span style="font-size:11px;color:var(--gray)">(' + hours + 'h)</span>' +
+            '<span style="font-size:10px;color:' + statusColor + ';margin-left:auto;font-weight:600">' + sh.status + '</span>' +
+          '</div>';
+        }).join('');
+      }
+      if (item.req) {
+        const reqColor = item.req.status==='承認'?'var(--red)':item.req.status==='却下'?'var(--gray)':'var(--warn)';
+        shiftContent += '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' +
+          '<span style="font-size:13px">🙏</span>' +
+          '<span style="font-size:12px;color:' + reqColor + ';font-weight:600">休み希望（' + item.req.status + '）</span>' +
+        '</div>';
+      }
+
+      return '<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #F5F5F5' + (isToday?';background:#FDF8F6':'') + '">' +
+        '<div style="width:44px;text-align:center;flex-shrink:0">' +
+          '<div style="font-size:18px;font-weight:700;' + dowColor + '">' + d.getDate() + '</div>' +
+          '<div style="font-size:10px;' + dowColor + '">' + DOW_JP[dow] + '</div>' +
+        '</div>' +
+        '<div style="flex:1">' + shiftContent + '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('myShiftList').innerHTML = html || '<div style="padding:30px;text-align:center;color:var(--gray);font-size:13px">この月のシフトはまだありません</div>';
+
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function renderToday(){
+  const ds=fmt(new Date());
+  const todayShifts=await api(`shifts?store_id=eq.${currentStaff.storeId}&date=eq.${ds}&order=dept,start_hour`);
+  const sm={};staffList.forEach(s=>sm[s.id]=s);
+  const ss=todayShifts.filter(s=>s.dept==='s'),ms=todayShifts.filter(s=>s.dept==='m');
+  function rows(shs){if(!shs.length)return`<div class="today-empty">シフトなし</div>`;
+    return shs.map(sh=>{const s=sm[sh.staff_id];const nm=s?s.name:sh.staff_id;const isCurrent=currentStaff.id===sh.staff_id;
+    return`<div class="today-staff-row"${isCurrent?' style="background:#FDF8F6;border-radius:8px;padding:8px;margin:-2px -4px"':''}>
+      <div class="today-av av-${sh.dept}">${nm.charAt(0)}</div>
+      <span style="${isCurrent?'font-weight:700;color:var(--brown)':''}">${nm}${isCurrent?' 👈':''}</span>
+      <span class="today-time">${fmtT(sh.start_hour)}〜${fmtT(sh.end_hour)}</span>
+      <span class="today-status ${sh.status==='確定'?'st-c':'st-t'}">${sh.status}</span>
+    </div>`}).join('');}
+  const d=new Date();
+  document.getElementById('todayArea').innerHTML=`
+    <div class="today-card"><h3>📅 ${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）の出勤メンバー</h3>
+      <div style="margin-bottom:8px"><div style="font-size:11px;font-weight:700;padding:3px 8px;background:var(--sales-light);color:var(--sales);border-radius:4px;display:inline-block;margin-bottom:6px">販売</div>${rows(ss)}</div>
+      <div><div style="font-size:11px;font-weight:700;padding:3px 8px;background:var(--mfg-light);color:var(--mfg);border-radius:4px;display:inline-block;margin-bottom:6px">製造</div>${rows(ms)}</div>
+    </div>`;
+}
+
+// ===== スタッフ管理 =====
+const FUYOU_OPTIONS = [
+  {value: 0, label: '扶養なし（正社員等）'},
+  {value: 103, label: '103万円の壁'},
+  {value: 130, label: '130万円の壁'},
+  {value: 150, label: '150万円の壁'},
+  {value: 201, label: '201万円の壁'},
+];
+
+async function loadStaffMgr() {
+  const area = document.getElementById('staffMgrList');
+  area.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const list = await api('staff?store_id=eq.' + adminStoreId + '&active=eq.true&order=dept,name');
+    // DOM構築方式（クォート問題を回避）
+    const container = document.createElement('div');
+    list.forEach(s => {
+      const deptLabel = s.dept === 's' ? '販売' : '製造';
+      const deptColor = s.dept === 's' ? 'var(--sales)' : 'var(--mfg)';
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:12px;padding:14px 16px;margin-bottom:8px;box-shadow:0 2px 8px rgba(107,58,42,0.08)';
+
+      // ヘッダー
+      const hd = document.createElement('div');
+      hd.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px';
+      hd.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + deptColor + ';color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">' + s.name.charAt(0) + '</div>' +
+        '<div><div style="font-size:14px;font-weight:700">' + s.name + '</div><div style="font-size:11px;color:var(--gray)">' + deptLabel + ' / ' + (s.role==='GM'?'GM':s.role==='manager'?'マネージャー':'スタッフ') + '</div></div>';
+      card.appendChild(hd);
+
+      // フォーム行
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap';
+
+      // 時給
+      const wageDiv = document.createElement('div');
+      wageDiv.style.cssText = 'flex:1;min-width:120px';
+      const wageLabel = document.createElement('label');
+      wageLabel.style.cssText = 'font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px';
+      wageLabel.textContent = '時給';
+      const wageWrap = document.createElement('div');
+      wageWrap.style.cssText = 'display:flex;align-items:center;gap:4px';
+      wageWrap.innerHTML = '<span style="font-size:13px">¥</span>';
+      const wageInput = document.createElement('input');
+      wageInput.type = 'number'; wageInput.id = 'wage-' + s.id;
+      wageInput.value = s.hourly_wage || 1000; wageInput.min = 800; wageInput.max = 5000; wageInput.step = 10;
+      wageInput.style.cssText = 'width:80px;border:1.5px solid var(--gray-border);border-radius:6px;padding:5px 6px;font-size:13px';
+      wageWrap.appendChild(wageInput);
+      wageDiv.appendChild(wageLabel); wageDiv.appendChild(wageWrap);
+
+      // 扶養枠
+      const fuyouDiv = document.createElement('div');
+      fuyouDiv.style.cssText = 'flex:2;min-width:180px';
+      const fuyouLabel = document.createElement('label');
+      fuyouLabel.style.cssText = 'font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px';
+      fuyouLabel.textContent = '扶養枠';
+      const fuyouSel = document.createElement('select');
+      fuyouSel.id = 'fuyou-' + s.id;
+      fuyouSel.style.cssText = 'width:100%;border:1.5px solid var(--gray-border);border-radius:6px;padding:5px 8px;font-size:12px';
+      FUYOU_OPTIONS.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.value; opt.textContent = o.label;
+        if (s.fuyou_limit === o.value) opt.selected = true;
+        fuyouSel.appendChild(opt);
+      });
+      fuyouDiv.appendChild(fuyouLabel); fuyouDiv.appendChild(fuyouSel);
+
+      // 保存ボタン
+      const btnDiv = document.createElement('div');
+      const btn = document.createElement('button');
+      btn.textContent = '保存';
+      btn.style.cssText = 'padding:7px 14px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer';
+      btn.onclick = function() { saveStaffSettings(s.id); };
+      btnDiv.appendChild(btn);
+
+      row.appendChild(wageDiv); row.appendChild(fuyouDiv); row.appendChild(btnDiv);
+      card.appendChild(row);
+      container.appendChild(card);
+    });
+    area.innerHTML = '';
+    area.appendChild(container);
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function saveStaffSettings(staffId) {
+  const wage = parseInt(document.getElementById('wage-' + staffId).value);
+  const fuyou = parseInt(document.getElementById('fuyou-' + staffId).value);
+  if (!wage || wage < 800) return showToast('時給は800円以上で入力してください','error');
+  try {
+    await api('staff?id=eq.' + staffId, { method:'PATCH', body: JSON.stringify({hourly_wage: wage, fuyou_limit: fuyou}) });
+    // staffListも更新
+    const idx = staffList.findIndex(s => s.id === staffId);
+    if (idx >= 0) { staffList[idx].hourly_wage = wage; staffList[idx].fuyou_limit = fuyou; }
+    showToast('✅ 保存しました','success');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function loadAdminSwaps() {
+  const area = document.getElementById('adminSwapList');
+  area.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const reqs = await api('swap_requests?store_id=eq.' + adminStoreId + '&order=created_at.desc');
+    const staffMap = {};
+    staffList.forEach(s => staffMap[s.id] = s);
+    if (!reqs.length) {
+      area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">交代申請はありません</div>';
+      return;
+    }
+    area.innerHTML = reqs.map(r => {
+      const req = staffMap[r.requester_id];
+      const tgt = staffMap[r.target_id];
+      const statusColor = r.status==='申請中'?'var(--warn)':r.status==='承認'?'var(--sales)':r.status==='管理者承認'?'var(--green)':'var(--gray)';
+      const d = new Date(r.created_at);
+      const dateStr = (d.getMonth()+1) + '/' + d.getDate();
+      return '<div style="background:white;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(107,58,42,0.08)">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+          '<span style="font-size:14px;font-weight:700">' + (req?req.name:'?') + ' → ' + (tgt?tgt.name:'?') + '</span>' +
+          '<span style="font-size:11px;font-weight:600;color:' + statusColor + ';margin-left:auto">' + r.status + '</span>' +
+        '</div>' +
+        (r.message ? '<div style="font-size:12px;color:#555;background:#F8F8F8;border-radius:8px;padding:8px;margin-bottom:8px">' + r.message + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--gray);margin-bottom:8px">' + dateStr + '</div>' +
+        (r.status === '承認' ?
+          '<div style="display:flex;gap:8px">' +
+            '<button onclick="adminApproveSwap(' + r.id + ')" style="flex:1;padding:8px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✅ 最終承認</button>' +
+            '<button onclick="adminRejectSwap(' + r.id + ')" style="flex:1;padding:8px;background:none;border:1.5px solid var(--gray-border);color:var(--gray);border-radius:8px;font-size:13px;cursor:pointer">❌ 却下</button>' +
+          '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function adminApproveSwap(id) {
+  if (!confirm('この交代を最終承認しますか？')) return;
+  await api('swap_requests?id=eq.' + id, { method:'PATCH', body: JSON.stringify({status:'管理者承認'}) });
+  showToast('✅ 最終承認しました','success');
+  await loadAdminSwaps();
+}
+
+async function adminRejectSwap(id) {
+  if (!confirm('この交代申請を却下しますか？')) return;
+  await api('swap_requests?id=eq.' + id, { method:'PATCH', body: JSON.stringify({status:'却下'}) });
+  showToast('却下しました','success');
+  await loadAdminSwaps();
+}
+
+// ===== 交代申請 =====
+async function renderSwap() {
+  if (!currentStaff) return;
+  await Promise.all([renderSwapInbox(), renderSwapOutbox()]);
+}
+
+async function renderSwapInbox() {
+  const area = document.getElementById('swapInboxArea');
+  try {
+    const reqs = await api('swap_requests?target_id=eq.' + currentStaff.id + '&store_id=eq.' + currentStaff.storeId + '&order=created_at.desc');
+    const staffMap = {};
+    staffList.forEach(s => staffMap[s.id] = s);
+    if (!reqs.length) {
+      area.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">交代依頼はありません</div>';
+      return;
+    }
+    area.innerHTML = reqs.map(r => {
+      const requester = staffMap[r.requester_id];
+      const statusColor = r.status==='申請中'?'var(--warn)':r.status==='承認'?'var(--green)':'var(--gray)';
+      const d = new Date(r.created_at);
+      const dateStr = (d.getMonth()+1) + '/' + d.getDate();
+      return '<div style="padding:12px 16px;border-bottom:1px solid #F5F5F5">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+          '<span style="font-size:13px;font-weight:700">' + (requester?requester.name:'不明') + 'さんから</span>' +
+          '<span style="font-size:11px;color:' + statusColor + ';font-weight:600;margin-left:auto">' + r.status + '</span>' +
+        '</div>' +
+        (r.message ? '<div style="font-size:12px;color:#555;background:#F8F8F8;border-radius:8px;padding:8px;margin-bottom:8px">' + r.message + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--gray);margin-bottom:8px">' + dateStr + '</div>' +
+        (r.status === '申請中' ?
+          '<div style="display:flex;gap:8px">' +
+            '<button onclick="respondSwap(' + r.id + ', true)" style="flex:1;padding:8px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✅ 承認する</button>' +
+            '<button onclick="respondSwap(' + r.id + ', false)" style="flex:1;padding:8px;background:none;border:1.5px solid var(--gray-border);color:var(--gray);border-radius:8px;font-size:13px;cursor:pointer">❌ 断る</button>' +
+          '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) { area.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">読み込みエラー</div>'; }
+}
+
+async function renderSwapOutbox() {
+  const area = document.getElementById('swapOutboxArea');
+  try {
+    const reqs = await api('swap_requests?requester_id=eq.' + currentStaff.id + '&store_id=eq.' + currentStaff.storeId + '&order=created_at.desc');
+    const staffMap = {};
+    staffList.forEach(s => staffMap[s.id] = s);
+    if (!reqs.length) {
+      area.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">申請はありません</div>';
+      return;
+    }
+    area.innerHTML = reqs.map(r => {
+      const target = staffMap[r.target_id];
+      const statusColor = r.status==='申請中'?'var(--warn)':r.status==='承認'?'var(--green)':r.status==='管理者承認'?'var(--sales)':'var(--gray)';
+      const d = new Date(r.created_at);
+      const dateStr = (d.getMonth()+1) + '/' + d.getDate();
+      return '<div style="padding:12px 16px;border-bottom:1px solid #F5F5F5">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+          '<span style="font-size:13px;font-weight:700">' + (target?target.name:'不明') + 'さんへ</span>' +
+          '<span style="font-size:11px;color:' + statusColor + ';font-weight:600;margin-left:auto">' + r.status + '</span>' +
+        '</div>' +
+        (r.message ? '<div style="font-size:12px;color:#555;margin-bottom:4px">' + r.message + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--gray)">' + dateStr + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { area.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">読み込みエラー</div>'; }
+}
+
+// 自分のシフト選択時にターゲット候補を自動フィルタリング
+async function onMyShiftSelected() {
+  const myShiftId = document.getElementById('sw-myshift').value;
+  const targetSel = document.getElementById('sw-target');
+  const targetShiftSel = document.getElementById('sw-targetshift');
+  targetSel.innerHTML = '<option value="">読み込み中...</option>';
+  targetShiftSel.innerHTML = '<option value="">選択しない</option>';
+  if (!myShiftId) {
+    targetSel.innerHTML = '<option value="">先にシフトを選択してください</option>';
+    return;
+  }
+
+  // 選択したシフトの詳細を取得
+  const myShift = await api('shifts?id=eq.' + myShiftId).then(r => r[0]);
+  if (!myShift) return;
+
+  // 同日の全シフトを取得（自分以外）
+  const sameDayShifts = await api('shifts?store_id=eq.' + currentStaff.storeId + '&date=eq.' + myShift.date + '&staff_id=neq.' + currentStaff.id);
+
+  // 時間帯が被るスタッフIDを抽出
+  const busyStaffIds = new Set(sameDayShifts
+    .filter(sh => sh.start_hour < myShift.end_hour && sh.end_hour > myShift.start_hour)
+    .map(sh => sh.staff_id)
+  );
+
+  // シフトが全くない（休み）スタッフ
+  const allDayStaffIds = new Set(sameDayShifts.map(sh => sh.staff_id));
+
+  const candidates = staffList.filter(s => s.id !== currentStaff.id);
+  if (!candidates.length) {
+    targetSel.innerHTML = '<option value="">候補スタッフがいません</option>';
+    return;
+  }
+
+  // 3グループに分類
+  const free = candidates.filter(s => !allDayStaffIds.has(s.id));           // その日シフトなし
+  const available = candidates.filter(s => allDayStaffIds.has(s.id) && !busyStaffIds.has(s.id)); // シフトあるが時間帯被らない
+  const busy = candidates.filter(s => busyStaffIds.has(s.id));              // 時間帯被っている
+
+  let html = '<option value="">選択してください...</option>';
+  const DOW_JP = ['日','月','火','水','木','金','土'];
+  const d = new Date(myShift.date + 'T00:00:00');
+  const dateLabel = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW_JP[d.getDay()] + '）';
+
+  if (free.length) {
+    html += '<optgroup label="✅ ' + dateLabel + 'シフトなし（交代しやすい）">';
+    free.forEach(s => { html += '<option value="' + s.id + '">' + s.name + '（' + (s.dept==='s'?'販売':'製造') + '）</option>'; });
+    html += '</optgroup>';
+  }
+  if (available.length) {
+    html += '<optgroup label="🕐 同日シフトあり・時間帯は空き">';
+    available.forEach(s => { html += '<option value="' + s.id + '">' + s.name + '（' + (s.dept==='s'?'販売':'製造') + '）</option>'; });
+    html += '</optgroup>';
+  }
+  if (busy.length) {
+    html += '<optgroup label="❌ 時間帯が重複（交代困難）">';
+    busy.forEach(s => { html += '<option value="' + s.id + '" disabled>' + s.name + '（時間帯重複）</option>'; });
+    html += '</optgroup>';
+  }
+
+  targetSel.innerHTML = html;
+  document.getElementById('sw-targetshift').innerHTML = '<option value="">選択しない</option>';
+}
+
+async function openSwapRequestModal() {
+  const today = fmt(new Date());
+  const future = await api('shifts?staff_id=eq.' + currentStaff.id + '&date=gte.' + today + '&order=date&limit=20');
+  if (!future.length) {
+    showToast('交代できるシフトがありません','error');
+    return;
+  }
+  const DOW_JP = ['日','月','火','水','木','金','土'];
+  const myShiftSel = document.getElementById('sw-myshift');
+  myShiftSel.innerHTML = '<option value="">選択してください...</option>' +
+    future.map(sh => {
+      const d = new Date(sh.date + 'T00:00:00');
+      const label = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW_JP[d.getDay()] + '） ' + fmtT(sh.start_hour) + '〜' + fmtT(sh.end_hour);
+      return '<option value="' + sh.id + '">' + label + '</option>';
+    }).join('');
+
+  document.getElementById('sw-target').innerHTML = '<option value="">↑ まずシフトを選択してください</option>';
+  document.getElementById('sw-targetshift').innerHTML = '<option value="">選択しない</option>';
+  document.getElementById('sw-message').value = '';
+  document.getElementById('swapModal').classList.add('open');
+}
+
+async function loadTargetShifts() {
+  const targetId = document.getElementById('sw-target').value;
+  const myShiftId = document.getElementById('sw-myshift').value;
+  const sel = document.getElementById('sw-targetshift');
+  if (!targetId || !myShiftId) { sel.innerHTML = '<option value="">選択しない</option>'; return; }
+  const myShift = await api('shifts?id=eq.' + myShiftId).then(r => r[0]);
+  if (!myShift) return;
+  // 相手の今後のシフト（同日以外も含む）
+  const today = fmt(new Date());
+  const shifts = await api('shifts?staff_id=eq.' + targetId + '&date=gte.' + today + '&order=date&limit=20');
+  const DOW_JP = ['日','月','火','水','木','金','土'];
+  sel.innerHTML = '<option value="">選択しない（出てもらえるか聞くだけ）</option>' +
+    shifts.map(sh => {
+      const d = new Date(sh.date + 'T00:00:00');
+      const label = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW_JP[d.getDay()] + '） ' + fmtT(sh.start_hour) + '〜' + fmtT(sh.end_hour);
+      return '<option value="' + sh.id + '">' + label + '</option>';
+    }).join('');
+}
+
+function closeSwapModal() { document.getElementById('swapModal').classList.remove('open'); }
+
+async function submitSwapRequest() {
+  const myShiftId = document.getElementById('sw-myshift').value;
+  const targetId = document.getElementById('sw-target').value;
+  const targetShiftId = document.getElementById('sw-targetshift').value;
+  const message = document.getElementById('sw-message').value.trim();
+  if (!myShiftId) return showToast('交代するシフトを選択してください','error');
+  if (!targetId) return showToast('交代をお願いするスタッフを選択してください','error');
+  try {
+    await api('swap_requests', { method:'POST', body: JSON.stringify({
+      store_id: currentStaff.storeId,
+      requester_id: currentStaff.id,
+      requester_shift_id: parseInt(myShiftId),
+      target_id: targetId,
+      target_shift_id: targetShiftId ? parseInt(targetShiftId) : null,
+      message, status: '申請中'
+    })});
+    showToast('✅ 交代申請を送りました','success');
+    closeSwapModal();
+    await renderSwap();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function respondSwap(id, approve) {
+  var status = approve ? '承認' : '却下';
+  var label = approve ? '承認' : '断り';
+  if (!confirm('この交代依頼を' + label + 'しますか？')) return;
+  try {
+    await api('swap_requests?id=eq.' + id, { method:'PATCH', body: JSON.stringify({status: status}) });
+    showToast(approve ? '✅ 承認しました。管理者が最終確認します。' : '断りました','success');
+    await renderSwapInbox();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+// ===== お知らせ =====
+let editingNoticeId = null;
+
+async function renderNotices() {
+  if (!currentStaff) return;
+  const area = document.getElementById('noticeListArea');
+  area.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const notices = await api('notices?store_id=eq.' + currentStaff.storeId + '&order=created_at.desc');
+    if (!notices.length) {
+      area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">お知らせはありません</div>';
+      return;
+    }
+    area.innerHTML = notices.map(n => {
+      const d = new Date(n.created_at);
+      const dateStr = d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+      const importantStyle = n.important ? 'border-left:4px solid var(--red);' : 'border-left:4px solid var(--brown-border);';
+      return '<div style="background:white;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(107,58,42,0.08);' + importantStyle + '">' +
+        (n.important ? '<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 重要</div>' : '') +
+        '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:6px">' + n.title + '</div>' +
+        (n.body ? '<div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:8px;white-space:pre-wrap">' + n.body + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--gray)">' + dateStr + (n.created_by ? ' · ' + n.created_by : '') + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function loadAdminNotices() {
+  const area = document.getElementById('adminNoticeList');
+  area.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const notices = await api('notices?store_id=eq.' + adminStoreId + '&order=created_at.desc');
+    if (!notices.length) {
+      area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">お知らせがありません。「＋ 投稿する」から追加してください。</div>';
+      return;
+    }
+    area.innerHTML = notices.map(n => {
+      const d = new Date(n.created_at);
+      const dateStr = d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+      const importantStyle = n.important ? 'border-left:4px solid var(--red);' : 'border-left:4px solid var(--brown-border);';
+      return '<div style="background:white;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(107,58,42,0.08);' + importantStyle + '">' +
+        '<div style="display:flex;align-items:flex-start;gap:8px">' +
+          '<div style="flex:1">' +
+            (n.important ? '<span style="font-size:11px;font-weight:700;color:var(--red);margin-right:6px">⚠️ 重要</span>' : '') +
+            '<span style="font-size:15px;font-weight:700;color:#333">' + n.title + '</span>' +
+          '</div>' +
+          '<button onclick="openNoticeEdit(' + n.id + ')" style="background:none;border:1px solid var(--gray-border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--gray);cursor:pointer;flex-shrink:0">編集</button>' +
+        '</div>' +
+        (n.body ? '<div style="font-size:13px;color:#555;line-height:1.6;margin:8px 0;white-space:pre-wrap">' + n.body + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--gray)">' + dateStr + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+let _adminNotices = [];
+async function openNoticeEdit(id) {
+  const notices = await api('notices?store_id=eq.' + adminStoreId + '&order=created_at.desc');
+  const n = notices.find(x => x.id === id);
+  if (!n) return;
+  editingNoticeId = id;
+  document.getElementById('noticeModalTitle').textContent = 'お知らせ編集';
+  document.getElementById('nf-title').value = n.title;
+  document.getElementById('nf-body').value = n.body || '';
+  document.getElementById('nf-important').checked = n.important || false;
+  document.getElementById('noticeDelBtn').style.display = 'block';
+  document.getElementById('noticeModal').classList.add('open');
+}
+
+function openNoticeModal() {
+  editingNoticeId = null;
+  document.getElementById('noticeModalTitle').textContent = 'お知らせ投稿';
+  document.getElementById('nf-title').value = '';
+  document.getElementById('nf-body').value = '';
+  document.getElementById('nf-important').checked = false;
+  document.getElementById('noticeDelBtn').style.display = 'none';
+  document.getElementById('noticeModal').classList.add('open');
+}
+
+function closeNoticeModal() { document.getElementById('noticeModal').classList.remove('open'); }
+
+async function saveNotice() {
+  const title = document.getElementById('nf-title').value.trim();
+  if (!title) return showToast('タイトルを入力してください','error');
+  const body = document.getElementById('nf-body').value.trim();
+  const important = document.getElementById('nf-important').checked;
+  const data = { store_id: adminStoreId, title, body, important };
+  try {
+    if (editingNoticeId) {
+      await api('notices?id=eq.' + editingNoticeId, { method:'PATCH', body: JSON.stringify(data) });
+      showToast('更新しました','success');
+    } else {
+      await api('notices', { method:'POST', body: JSON.stringify(data) });
+      showToast('投稿しました','success');
+    }
+    closeNoticeModal();
+    await loadAdminNotices();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function deleteNotice() {
+  if (!editingNoticeId || !confirm('このお知らせを削除しますか？')) return;
+  try {
+    await api('notices?id=eq.' + editingNoticeId, { method:'DELETE', prefer:'return=minimal' });
+    showToast('削除しました','success');
+    closeNoticeModal();
+    await loadAdminNotices();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+// ===== スキルマップ =====
+let editingSkillId = null;
+const SKILL_LEVELS = {1:'△ 見習い', 2:'〇 できる', 3:'◎ 得意'};
+const SKILL_COLORS = {1:'#FFF3E0', 2:'#E3F2FD', 3:'#E8F5E9'};
+const SKILL_TEXT_COLORS = {1:'var(--mfg)', 2:'var(--sales)', 3:'var(--green)'};
+
+async function loadSkillMap() {
+  const area = document.getElementById('skillMapArea');
+  area.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const skills = await api('skills?store_id=eq.' + adminStoreId + '&order=skill_name,staff_id');
+    // スキル名一覧
+    const skillNames = [...new Set(skills.map(s => s.skill_name))].sort();
+    const staffMap = {};
+    staffList.forEach(s => staffMap[s.id] = s);
+
+    if (!skillNames.length) {
+      area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">スキルが登録されていません。「＋ スキル追加」から登録してください。</div>';
+      return;
+    }
+
+    // スキルマップテーブル
+    const salesStaff = staffList.filter(s => s.dept === 's');
+    const mfgStaff = staffList.filter(s => s.dept === 'm');
+
+    function buildTable(slist, label, color) {
+      if (!slist.length) return '';
+      const header = '<tr><th style="padding:8px 12px;font-size:12px;color:var(--gray);text-align:left;background:#F5F5F5;border-bottom:1px solid var(--gray-border)">スタッフ</th>' +
+        skillNames.map(n => '<th style="padding:8px 8px;font-size:11px;color:var(--gray);text-align:center;background:#F5F5F5;border-bottom:1px solid var(--gray-border);white-space:nowrap">' + n + '</th>').join('') + '</tr>';
+      const rows = slist.map(s => {
+        const cells = skillNames.map(n => {
+          const sk = skills.find(x => x.staff_id === s.id && x.skill_name === n);
+          if (!sk) return '<td style="padding:8px;text-align:center;border-bottom:1px solid #F5F5F5"><span style="color:#E0E0E0;font-size:16px">—</span></td>';
+          return '<td style="padding:6px;text-align:center;border-bottom:1px solid #F5F5F5"><span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:' + SKILL_COLORS[sk.level] + ';color:' + SKILL_TEXT_COLORS[sk.level] + '">' + SKILL_LEVELS[sk.level] + '</span></td>';
+        }).join('');
+        return '<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F5F5F5;white-space:nowrap">' + s.name + '</td>' + cells + '</tr>';
+      }).join('');
+      return '<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;padding:4px 10px;background:' + color + ';display:inline-block;border-radius:4px;margin-bottom:8px">' + label + '</div>' +
+        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(107,58,42,0.08)">' +
+        '<thead>' + header + '</thead><tbody>' + rows + '</tbody></table></div></div>';
+    }
+
+    area.innerHTML = buildTable(salesStaff, '販売', 'var(--sales-light)') + buildTable(mfgStaff, '製造', 'var(--mfg-light)');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+let skillMasters = [];
+
+async function openSkillModal() {
+  editingSkillId = null;
+  document.getElementById('skillModalTitle').textContent = 'スキル登録';
+  document.getElementById('skillDelBtn').style.display = 'none';
+
+  // スタッフセレクト
+  document.getElementById('sk-staff').innerHTML = staffList.map(s =>
+    '<option value="' + s.id + '" data-dept="' + s.dept + '">' + s.name + '（' + (s.dept==='s'?'販売':'製造') + '）</option>'
+  ).join('');
+
+  // スキルマスタ読み込み
+  skillMasters = await api('skill_masters?store_id=eq.' + adminStoreId + '&order=dept,sort_order');
+  filterSkillMasters();
+
+  document.querySelector('input[name="sk-level"][value="1"]').checked = true;
+  document.getElementById('sk-newmaster').value = '';
+  document.getElementById('skillModal').classList.add('open');
+}
+
+function filterSkillMasters() {
+  const sel = document.getElementById('sk-staff');
+  const dept = sel.options[sel.selectedIndex]?.dataset.dept || '';
+  const filtered = skillMasters.filter(m => m.dept === dept || m.dept === 'both');
+  document.getElementById('sk-master').innerHTML =
+    '<option value="">選択してください...</option>' +
+    filtered.map(m => '<option value="' + m.name + '">' + m.name + '</option>').join('');
+}
+
+async function addSkillMaster() {
+  const name = document.getElementById('sk-newmaster').value.trim();
+  const dept = document.getElementById('sk-newdept').value;
+  if (!name) return showToast('スキル名を入力してください','error');
+  try {
+    await api('skill_masters', {method:'POST', body:JSON.stringify({
+      store_id: adminStoreId, name, dept, sort_order: skillMasters.length + 1
+    })});
+    skillMasters = await api('skill_masters?store_id=eq.' + adminStoreId + '&order=dept,sort_order');
+    filterSkillMasters();
+    document.getElementById('sk-newmaster').value = '';
+    document.getElementById('sk-master').value = name;
+    showToast('スキルマスタに追加しました','success');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+function closeSkillModal() { document.getElementById('skillModal').classList.remove('open'); }
+
+async function saveSkill() {
+  const staffId = document.getElementById('sk-staff').value;
+  const name = document.getElementById('sk-master').value;
+  const level = parseInt(document.querySelector('input[name="sk-level"]:checked').value);
+  if (!name) return showToast('スキルを選択してください','error');
+  try {
+    if (editingSkillId) {
+      await api('skills?id=eq.' + editingSkillId, {method:'PATCH', body:JSON.stringify({skill_name:name, level})});
+      showToast('更新しました','success');
+    } else {
+      const exist = await api('skills?store_id=eq.' + adminStoreId + '&staff_id=eq.' + staffId + '&skill_name=eq.' + encodeURIComponent(name));
+      if (exist.length) {
+        await api('skills?id=eq.' + exist[0].id, {method:'PATCH', body:JSON.stringify({level})});
+        showToast('レベルを更新しました','success');
+      } else {
+        await api('skills', {method:'POST', body:JSON.stringify({store_id:adminStoreId, staff_id:staffId, skill_name:name, level})});
+        showToast('追加しました','success');
+      }
+    }
+    closeSkillModal(); await loadSkillMap();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function deleteSkill() {
+  if (!editingSkillId || !confirm('削除しますか？')) return;
+  await api('skills?id=eq.' + editingSkillId, {method:'DELETE', prefer:'return=minimal'});
+  showToast('削除しました','success');
+  closeSkillModal(); await loadSkillMap();
+}
+
+// ===== 有給管理（管理者） =====
+async function loadLeave() {
+  const yearSel = document.getElementById('leaveYear');
+  if (!yearSel.innerHTML || yearSel.innerHTML === '') {
+    const y = new Date().getFullYear();
+    yearSel.innerHTML = [y-1,y,y+1].map(yr => '<option value="' + yr + '"' + (yr===y?' selected':'') + '>' + yr + '</option>').join('');
+  }
+  const year = parseInt(yearSel.value) || new Date().getFullYear();
+  const leaveArea = document.getElementById('leaveArea');
+  const reqArea = document.getElementById('leaveRequestArea');
+  leaveArea.innerHTML = '<div class="loading">読み込み中...</div>';
+  reqArea.innerHTML = '<div class="loading">読み込み中...</div>';
+  try {
+    const leaves = await api('annual_leaves?store_id=eq.' + adminStoreId + '&year=eq.' + year + '&order=staff_id');
+    const reqs = await api('leave_requests?store_id=eq.' + adminStoreId + '&order=created_at.desc&limit=30');
+    const staffMap = {};
+    staffList.forEach(s => staffMap[s.id] = s);
+
+    // 有給残日数テーブル
+    const container = document.createElement('div');
+    staffList.forEach(s => {
+      const leaf = leaves.find(l => l.staff_id === s.id) || {total_days:0, used_days:0, id:null};
+      const remain = leaf.total_days - leaf.used_days;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 2px 6px rgba(107,58,42,0.06);display:flex;align-items:center;gap:12px';
+      const deptColor = s.dept==='s'?'var(--sales)':'var(--mfg)';
+      card.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:' + deptColor + ';color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">' + s.name.charAt(0) + '</div>' +
+        '<div style="flex:1;font-size:13px;font-weight:600">' + s.name + '</div>';
+      const inputs = document.createElement('div');
+      inputs.style.cssText = 'display:flex;align-items:center;gap:8px';
+      inputs.innerHTML = '<div style="text-align:center"><div style="font-size:10px;color:var(--gray)">付与</div>' +
+        '<input type="number" id="lt-' + s.id + '" value="' + leaf.total_days + '" min="0" max="40" step="0.5" style="width:52px;border:1.5px solid var(--gray-border);border-radius:6px;padding:4px;font-size:13px;text-align:center"></div>' +
+        '<div style="text-align:center"><div style="font-size:10px;color:var(--gray)">使用</div>' +
+        '<input type="number" id="lu-' + s.id + '" value="' + leaf.used_days + '" min="0" max="40" step="0.5" style="width:52px;border:1.5px solid var(--gray-border);border-radius:6px;padding:4px;font-size:13px;text-align:center"></div>' +
+        '<div style="text-align:center"><div style="font-size:10px;color:var(--gray)">残</div>' +
+        '<div id="lr-' + s.id + '" style="width:40px;font-size:15px;font-weight:700;color:' + (remain>0?'var(--green)':'var(--red)') + ';text-align:center">' + remain + '</div></div>';
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = '保存';
+      saveBtn.style.cssText = 'padding:5px 10px;background:var(--accent);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer';
+      saveBtn.onclick = function() { saveLeave(s.id, leaf.id, year); };
+      inputs.appendChild(saveBtn);
+      card.appendChild(inputs);
+      container.appendChild(card);
+    });
+    leaveArea.innerHTML = '';
+    leaveArea.appendChild(container);
+
+    // 有給申請一覧
+    if (!reqs.length) {
+      reqArea.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">申請はありません</div>';
+    } else {
+      const rrows = reqs.map(r => {
+        const s = staffMap[r.staff_id];
+        const statusColor = r.status==='申請中'?'var(--warn)':r.status==='承認'?'var(--green)':'var(--gray)';
+        const btns = r.status==='申請中' ? makeLeaveAdminBtns(r.id) : '';
+        return '<div style="background:white;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 2px 6px rgba(107,58,42,0.06)">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+            '<span style="font-size:13px;font-weight:700">' + (s?s.name:'不明') + '</span>' +
+            '<span style="font-size:12px;color:var(--gray)">' + r.date + '</span>' +
+            '<span style="font-size:11px;color:' + statusColor + ';font-weight:600;margin-left:auto">' + r.status + '</span>' +
+          '</div>' +
+          (r.reason ? '<div style="font-size:12px;color:#555;margin-bottom:8px">' + r.reason + '</div>' : '') +
+          btns + '</div>';
+      }).join('');
+      reqArea.innerHTML = rrows;
+    }
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+function makeLeaveAdminBtns(id) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px';
+  const approve = document.createElement('button');
+  approve.textContent = '✅ 承認';
+  approve.style.cssText = 'flex:1;padding:7px;background:var(--green);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer';
+  approve.onclick = function() { approveLeaveRequest(id, true); };
+  const reject = document.createElement('button');
+  reject.textContent = '❌ 却下';
+  reject.style.cssText = 'flex:1;padding:7px;background:none;border:1.5px solid var(--gray-border);color:var(--gray);border-radius:8px;font-size:12px;cursor:pointer';
+  reject.onclick = function() { approveLeaveRequest(id, false); };
+  div.appendChild(approve); div.appendChild(reject);
+  return div.outerHTML;
+}
+
+async function saveLeave(staffId, existId, year) {
+  const total = parseFloat(document.getElementById('lt-' + staffId).value) || 0;
+  const used = parseFloat(document.getElementById('lu-' + staffId).value) || 0;
+  const data = {store_id: adminStoreId, staff_id: staffId, year, total_days: total, used_days: used};
+  try {
+    if (existId) {
+      await api('annual_leaves?id=eq.' + existId, {method:'PATCH', body:JSON.stringify(data)});
+    } else {
+      await api('annual_leaves', {method:'POST', body:JSON.stringify(data)});
+    }
+    const remain = total - used;
+    const el = document.getElementById('lr-' + staffId);
+    if (el) { el.textContent = remain; el.style.color = remain > 0 ? 'var(--green)' : 'var(--red)'; }
+    showToast('✅ 保存しました','success');
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+async function approveLeaveRequest(id, approve) {
+  const status = approve ? '承認' : '却下';
+  if (!confirm('この有給申請を' + status + 'しますか？')) return;
+  try {
+    await api('leave_requests?id=eq.' + id, {method:'PATCH', body:JSON.stringify({status})});
+    showToast('✅ ' + status + 'しました','success');
+    await loadLeave();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+// ===== 有給申請（スタッフ） =====
+async function renderLeaveStaff() {
+  if (!currentStaff) return;
+  const year = new Date().getFullYear();
+  try {
+    const leaves = await api('annual_leaves?staff_id=eq.' + currentStaff.id + '&year=eq.' + year);
+    const leaf = leaves[0] || {total_days:0, used_days:0};
+    const remain = leaf.total_days - leaf.used_days;
+    document.getElementById('leaveTotalDays').textContent = leaf.total_days + '日';
+    document.getElementById('leaveUsedDays').textContent = leaf.used_days + '日';
+    document.getElementById('leaveRemainDays').textContent = remain + '日';
+
+    const reqs = await api('leave_requests?staff_id=eq.' + currentStaff.id + '&order=created_at.desc');
+    const hist = document.getElementById('leaveHistoryArea');
+    if (!reqs.length) {
+      hist.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">申請履歴はありません</div>';
+    } else {
+      hist.innerHTML = reqs.map(r => {
+        const statusColor = r.status==='申請中'?'var(--warn)':r.status==='承認'?'var(--green)':'var(--gray)';
+        return '<div style="padding:12px 16px;border-bottom:1px solid #F5F5F5;display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:13px">🌴</span>' +
+          '<span style="font-size:13px;font-weight:600">' + r.date + '</span>' +
+          (r.reason ? '<span style="font-size:12px;color:var(--gray)">' + r.reason + '</span>' : '') +
+          '<span style="font-size:11px;font-weight:600;color:' + statusColor + ';margin-left:auto">' + r.status + '</span>' +
+        '</div>';
+      }).join('');
+    }
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+function openLeaveRequestModal() {
+  const today = fmt(new Date());
+  document.getElementById('lr-date').value = today;
+  document.getElementById('lr-reason').value = '';
+  document.getElementById('leaveRequestModal').classList.add('open');
+}
+function closeLeaveRequestModal() { document.getElementById('leaveRequestModal').classList.remove('open'); }
+
+async function submitLeaveRequest() {
+  const date = document.getElementById('lr-date').value;
+  const reason = document.getElementById('lr-reason').value.trim();
+  if (!date) return showToast('日付を選択してください','error');
+  try {
+    await api('leave_requests', {method:'POST', body:JSON.stringify({
+      store_id: currentStaff.storeId, staff_id: currentStaff.id, date, reason, status:'申請中'
+    })});
+    showToast('✅ 有給申請しました','success');
+    closeLeaveRequestModal();
+    await renderLeaveStaff();
+  } catch(e) { showToast('エラー:'+e.message,'error'); }
+}
+
+function showToast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;setTimeout(()=>el.classList.remove('show'),3500);}
+
+document.getElementById('shiftModal').addEventListener('click',function(e){if(e.target===this)closeShiftModal();});
+document.getElementById('tmplModal').addEventListener('click',function(e){if(e.target===this)closeTmplModal();});
+document.getElementById('bulkModal').addEventListener('click',function(e){if(e.target===this)document.getElementById('bulkModal').classList.remove('open');});
+document.getElementById('monthlyPopup').addEventListener('click',function(e){if(e.target===this)closePopup();});
+document.getElementById('noticeModal').addEventListener('click',function(e){if(e.target===this)closeNoticeModal();});
+document.getElementById('swapModal').addEventListener('click',function(e){if(e.target===this)closeSwapModal();});
+document.getElementById('skillModal').addEventListener('click',function(e){if(e.target===this)closeSkillModal();});
+document.getElementById('leaveRequestModal').addEventListener('click',function(e){if(e.target===this)closeLeaveRequestModal();});
+
+init();
+</script>
+</body>
+</html>
