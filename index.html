@@ -538,7 +538,7 @@ header h1 { font-size:17px; font-weight:700; }
     <div class="staff-nav-tab" onclick="staffTab('notice')">🔔 お知らせ</div>
     <div class="staff-nav-tab" onclick="staffTab('swap')">🔄 交代申請</div>
     <div class="staff-nav-tab" onclick="staffTab('leave')">🌴 有給申請</div>
-    <div class="staff-nav-tab" onclick="staffTab('today')">👥 今日のメンバー</div>
+    <div class="staff-nav-tab" onclick="staffTab('today')">📅 今日のシフト</div>
   </div>
   <div id="staff-schedule">
     <div style="height:8px"></div>
@@ -1614,25 +1614,50 @@ async function renderMyShift() {
   } catch(e) { showToast('エラー:'+e.message,'error'); }
 }
 async function renderToday(){
-  const ds=fmt(new Date());
-  const todayShifts=await api(`shifts?store_id=eq.${currentStaff.storeId}&date=eq.${ds}&order=dept,start_hour`);
-  const sm={};staffList.forEach(s=>sm[s.id]=s);
-  const ss=todayShifts.filter(s=>s.dept==='s'),ms=todayShifts.filter(s=>s.dept==='m');
-  function rows(shs){if(!shs.length)return`<div class="today-empty">シフトなし</div>`;
-    return shs.map(sh=>{const s=sm[sh.staff_id];const nm=s?s.name:sh.staff_id;const isCurrent=currentStaff.id===sh.staff_id;
-    return`<div class="today-staff-row"${isCurrent?' style="background:#FDF8F6;border-radius:8px;padding:8px;margin:-2px -4px"':''}>
-      <div class="today-av av-${sh.dept}">${nm.charAt(0)}</div>
-      <span style="${isCurrent?'font-weight:700;color:var(--brown)':''}">${nm}${isCurrent?' 👈':''}</span>
-      <span class="today-time">${fmtT(sh.start_hour)}〜${fmtT(sh.end_hour)}</span>
-      <span class="today-status ${sh.status==='確定'?'st-c':'st-t'}">${sh.status}</span>
-    </div>`}).join('');}
   const d=new Date();
+  const ds=fmt(d);
+  const dow=d.getDay();
+  const storeId=currentStaff.storeId;
+  const [todayShifts, posData] = await Promise.all([
+    api(`shifts?store_id=eq.${storeId}&date=eq.${ds}&order=start_hour`),
+    api(`pos_data?store_id=eq.${storeId}&dow=eq.${dow}`).catch(()=>[])
+  ]);
+  const sm={}; staffList.forEach(s=>sm[s.id]=s);
+  const posMap={}; posData.forEach(p=>posMap[p.hour]=p);
+  const gridLines=Array.from({length:HOURS+1},(_,i)=>`<div class="day-grid-line" style="left:${(i/HOURS)*100}%"></div>`).join('');
+  const rows=todayShifts.map(sh=>{
+    const s=sm[sh.staff_id];
+    const nm=s?s.name:sh.staff_id;
+    const isCurrent=currentStaff.id===sh.staff_id;
+    const l=((sh.start_hour-HS)/HOURS)*100, w=((sh.end_hour-sh.start_hour)/HOURS)*100;
+    const bar=`<div class="day-shift-bar day-bar-${sh.dept} ${sh.status==='仮'?'day-bar-t':''}" style="left:${l}%;width:${w}%" title="${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}（${sh.status}）"><span style="pointer-events:none;font-size:9px;padding:0 3px">${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}</span></div>`;
+    return `<div class="day-tl-row"${isCurrent?' style="background:#FDF8F6"':''}>
+      <div class="day-td-name"><div class="day-staff-nm" style="${isCurrent?'font-weight:700;color:var(--brown)':''}">${nm}${isCurrent?' 👈':''}</div></div>
+      <div class="day-td-bar">${gridLines}${bar}</div>
+    </div>`;
+  }).join('');
+  const hours=Array.from({length:HOURS+1},(_,i)=>`<div class="day-th-hour">${HS+i}</div>`).join('');
+  const mkCells=(fn)=>Array.from({length:HOURS+1},(_,i)=>fn(HS+i)).join('');
+  const metricRows=[
+    {lbl:'予測売上',bg:'#EBF5FB',cells:mkCells((h)=>{
+      const p=posMap[h];
+      const v=p&&p.sales>0?(p.sales>=10000?'¥'+Math.round(p.sales/1000)+'k':'¥'+p.sales):'—';
+      return `<div class="day-metric-cell" style="color:var(--sales)">${v}</div>`;
+    })},
+    {lbl:'予測客数',bg:'#FFF3E0',cells:mkCells((h)=>{
+      const p=posMap[h];
+      return `<div class="day-metric-cell" style="color:#E65100">${p&&p.customers>0?p.customers+'人':'—'}</div>`;
+    })}
+  ].map(r=>`<div class="day-metric-row" style="background:${r.bg}"><div class="day-metric-name">${r.lbl}</div><div class="day-metric-cells">${r.cells}</div></div>`).join('');
   document.getElementById('todayArea').innerHTML=`
-    <div class="today-card"><h3>📅 ${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）の出勤メンバー</h3>
-      <div style="margin-bottom:8px"><div style="font-size:11px;font-weight:700;padding:3px 8px;background:var(--sales-light);color:var(--sales);border-radius:4px;display:inline-block;margin-bottom:6px">販売</div>${rows(ss)}</div>
-      <div><div style="font-size:11px;font-weight:700;padding:3px 8px;background:var(--mfg-light);color:var(--mfg);border-radius:4px;display:inline-block;margin-bottom:6px">製造</div>${rows(ms)}</div>
+    <div style="padding:4px 0 8px;font-size:13px;font-weight:600;color:var(--brown)">📅 ${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）のシフト</div>
+    <div class="day-tl-grid" style="overflow-x:auto">
+      <div class="day-tl-head"><div class="day-th-name">スタッフ</div><div class="day-th-hours">${hours}</div></div>
+      ${rows||'<div style="padding:20px;text-align:center;color:var(--gray)">本日のシフトなし</div>'}
+      ${metricRows}
     </div>`;
 }
+
 // ===== スタッフ管理 =====
 const FUYOU_OPTIONS = [
   {value: 0, label: '扶養なし（正社員等）'},
