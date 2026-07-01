@@ -1262,6 +1262,7 @@ async function renderDaily() {
   // 時間帯別メトリクス（全体集計）
   const hours=Array.from({length:HOURS+1},(_,i)=>`<div class="day-th-hour">${HS+i}</div>`).join('');
   const mkCells=(fn)=>Array.from({length:HOURS+1},(_,i)=>fn(HS+i,i)).join('');
+  const wageMap={}; staffList.forEach(s=>{wageMap[s.id]=s.hourly_wage||0;});
   const metricRows=[
     {lbl:'実シフト人数',bg:'#F8F8F8',cells:mkCells((h)=>{
       const n=new Set(dShifts.filter(sh=>sh.start_hour<=h&&sh.end_hour>h).map(sh=>sh.staff_id)).size;
@@ -1283,6 +1284,14 @@ async function renderDaily() {
     {lbl:'標準人数',bg:'#E8F5E9',cells:mkCells((h)=>{
       const t=targetMap[h];
       return `<div class="day-metric-cell"><input type="number" min="0" max="20" step="0.5" value="${t&&t.target_headcount!=null?t.target_headcount:''}" placeholder="—" onchange="saveShiftTarget('${adminStoreId}',${dow},${h},'target_headcount',this.value)" title="標準人数（名）"></div>`;
+    })},
+    {lbl:'予定人件費',bg:'#FFF3E0',cells:mkCells((h)=>{
+      const cost=dShifts.filter(sh=>sh.start_hour<=h&&sh.end_hour>h).reduce((sum,sh)=>sum+(wageMap[sh.staff_id]||0),0);
+      return `<div class="day-metric-cell" style="color:#E65100">${cost>0?'¥'+cost.toLocaleString():'—'}</div>`;
+    })},
+    {lbl:'実人件費',bg:'#FCE4EC',cells:mkCells((h)=>{
+      const cost=dShifts.filter(sh=>sh.start_hour<=h&&sh.end_hour>h&&sh.status==='確定').reduce((sum,sh)=>sum+(wageMap[sh.staff_id]||0),0);
+      return `<div class="day-metric-cell" style="color:#C2185B">${cost>0?'¥'+cost.toLocaleString():'—'}</div>`;
     })}
   ].map(r=>`<div class="day-metric-row" style="background:${r.bg}"><div class="day-metric-name">${r.lbl}</div><div class="day-metric-cells">${r.cells}</div></div>`).join('');
   const metricsHtml=`<div class="day-section-hd" style="margin-top:16px"><span class="sec-badge" style="background:#F5F5F5;color:var(--gray)">📊 時間帯別</span><span style="font-size:11px;color:var(--gray)">予測・目標値（${['日','月','火','水','木','金','土'][dow]}曜日の平均）</span></div>
