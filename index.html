@@ -365,6 +365,11 @@ header h1 { font-size:17px; font-weight:700; }
 .ai-warn-badge { font-size:9px; background:#FFF3E0; color:#E65100; padding:1px 5px; border-radius:8px; margin-left:4px; }
 .ai-day-row { border-bottom:1px solid #F5F5F5; cursor:pointer; }
 .ai-day-row:hover { background:#FAFAFA; }
+
+/* ===== 出勤可 表示 ===== */
+.pill-avail { border:1.5px dashed var(--accent); color:var(--accent); background:var(--accent-light); font-size:9px; border-radius:4px; padding:2px 6px; cursor:pointer; text-align:center; }
+.pill-avail:hover { background:var(--accent); color:white; }
+.badge-avail { background:var(--accent-light); color:var(--accent); border:1px solid var(--accent); font-size:9px; border-radius:10px; padding:1px 6px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -1013,7 +1018,7 @@ const HS = 5, HE = 22, HOURS = HE - HS;
 let mode = null; // 'admin' | 'staff'
 let currentStaff = null;
 let adminStoreId = '';
-let staffList = [], allShifts = [], templates = [], requests = [];
+let staffList = [], allShifts = [], templates = [], requests = [], availableReqs = [];
 // 日付系
 let mYear, mMonth; // 月間
 let wStart = new Date(); // 週間
@@ -1165,8 +1170,11 @@ function adminTab(tab) {
 async function loadAdminData() {
   const from = fmt(new Date(mYear, mMonth-1, 1));
   const to = fmt(new Date(mYear, mMonth, 0));
-  allShifts = await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&order=date,start_hour`);
-  requests = await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
+  [allShifts, requests, availableReqs] = await Promise.all([
+    api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&order=date,start_hour`),
+    api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`),
+    api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`)
+  ]);
   renderMonthly();
 }
 // ===== 月間 =====
@@ -1204,7 +1212,7 @@ function renderMonthly() {
     const dayN=isToday?`<span class="today-badge">${d}</span>`:`<span>${d}</span>`;
     html+=`<td class="cal-cell ${dowC}${isToday?' today-cell':''}" onclick="openPopup('${ds}',${d},${dow})">
       <div class="day-num">${dayN}</div>
-      <div class="count-row-m"><span class="count-badge ${bc(sc,std_s)}">販${sc}</span><span class="count-badge ${bc(mc,std_m)}">製${mc}</span></div>
+      <div class="count-row-m"><span class="count-badge ${bc(sc,std_s)}">販${sc}</span><span class="count-badge ${bc(mc,std_m)}">製${mc}</span>${(()=>{const ac=availableReqs.filter(r=>r.date===ds).length;return ac>0?`<span class="badge-avail">可${ac}</span>`:''})()}</div>
       <div class="name-list-m">${chips}</div></td>`;
     col++;
     if(col%7===0&&d<days) html+='</tr><tr>';
@@ -1241,11 +1249,15 @@ async function renderWeekly() {
   const from=fmt(dates[0]),to=fmt(dates[6]);
   document.getElementById('weekLabel').textContent=`${dates[0].getMonth()+1}月${dates[0].getDate()}日〜${dates[6].getMonth()+1}月${dates[6].getDate()}日`;
   const wShifts=await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&order=date,start_hour`);
-  const wReqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
+  const [wReqs, wAvail]=await Promise.all([
+    api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`),
+    api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`)
+  ]);
   const today=new Date();today.setHours(0,0,0,0);
   const staffMap={};staffList.forEach(s=>staffMap[s.id]=s);
   const sbyds={};wShifts.forEach(sh=>{const k=`${sh.date}_${sh.staff_id}`;if(!sbyds[k])sbyds[k]=[];sbyds[k].push(sh);});
   const offSet=new Set(wReqs.map(r=>`${r.date}_${r.staff_id}`));
+  const availSet=new Set(wAvail.map(r=>`${r.date}_${r.staff_id}`));
   // 日付セレクト更新
   document.getElementById('sf-date').innerHTML=dates.map(d=>`<option value="${fmt(d)}">${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）</option>`).join('');
   function headRow(){
@@ -1260,6 +1272,7 @@ async function renderWeekly() {
       const dayS=sbyds[k]||[],isOff=offSet.has(k);
       let inner='';
       if(isOff&&!dayS.length) inner=`<div class="shift-pill pill-off2">🙏休み</div>`;
+      else if(availSet.has(k)&&!dayS.length) inner=`<div class="pill-avail" onclick="openShiftAdd('${ds}','${s.id}','${s.dept}',event)">出勤可</div>`;
       else dayS.forEach(sh=>{inner+=`<div class="shift-pill pill-${sh.dept==='s'?'s2':'m2'} ${sh.status==='仮'?'pill-t':''}" onclick="openShiftEdit(${sh.id},event)" title="${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}">${fmtT(sh.start_hour)}-${fmtT(sh.end_hour)}</div>`;});
       return `<div class="td-day-w${isT?' today-col':''}" onclick="openShiftAdd('${ds}','${s.id}','${s.dept}',event)">${inner}</div>`;
     }).join('');
@@ -1358,7 +1371,14 @@ async function renderDaily() {
     <div class="day-tl-head"><div class="day-th-name">項目</div><div class="day-th-hours">${hours}</div></div>
     ${metricRows}
   </div>`;
-  document.getElementById('dailyArea').innerHTML=sec('販売','badge-s2','s')+sec('製造','badge-m2','m')+metricsHtml;
+  // 出勤可スタッフ（シフト未登録）
+  const dayAvail=await api(`requests?store_id=eq.${adminStoreId}&date=eq.${ds}&status=eq.出勤可`).catch(()=>[]);
+  const assignedIds=new Set(dShifts.map(sh=>sh.staff_id));
+  const availStaff=dayAvail.filter(r=>!assignedIds.has(r.staff_id));
+  const sm2={}; staffList.forEach(s=>sm2[s.id]=s);
+  const availHtml=availStaff.length?`<div class="day-section-hd" style="margin-top:12px"><span class="sec-badge" style="background:var(--accent-light);color:var(--accent)">✋ 出勤可</span><span style="font-size:11px;color:var(--text-sub)">シフト未登録（${availStaff.length}名）</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 4px">${availStaff.map(r=>{const s=sm2[r.staff_id];return s?`<div class="pill-avail" onclick="openShiftAdd('${ds}','${s.id}','${s.dept}',event)" style="padding:4px 10px;font-size:11px">${s.name}（${s.dept==='s'?'販売':'製造'}）</div>`:''}).join('')}</div>`:''  ;
+  document.getElementById('dailyArea').innerHTML=sec('販売','badge-s2','s')+sec('製造','badge-m2','m')+metricsHtml+availHtml;
 }
 
 // ===== シフトモーダル =====
@@ -1442,13 +1462,15 @@ async function generateAIShifts() {
   const prevFrom = fmt(prevDate);
   showToast('データ取得中...', 'success');
   try {
-    const [prevShifts, existingShifts, reqsRaw, targets] = await Promise.all([
+    const [prevShifts, existingShifts, reqsRaw, targets, availGenReqs] = await Promise.all([
       api(`shifts?store_id=eq.${adminStoreId}&date=gte.${prevFrom}&date=lt.${from}`),
       api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}`),
       api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`),
-      api(`shift_targets?store_id=eq.${adminStoreId}`).catch(() => [])
+      api(`shift_targets?store_id=eq.${adminStoreId}`).catch(() => []),
+      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`).catch(() => [])
     ]);
     const rqKeys = new Set(reqsRaw.map(r => `${r.staff_id}_${r.date}`));
+    const availGenSet = new Set(availGenReqs.map(r => `${r.staff_id}_${r.date}`));
     const exKeys = new Set(existingShifts.map(s => `${s.staff_id}_${s.date}`));
     const staffMap = {}; staffList.forEach(s => staffMap[s.id] = s);
     // 目標人数 by DOW（ピーク時間帯10-16の最大値）
@@ -1483,7 +1505,13 @@ async function generateAIShifts() {
       const date = new Date(y, m-1, d);
       const dow = date.getDay();
       const ds = `${y}-${pad(m)}-${pad(d)}`;
-      for (const staff of staffList) {
+      // 出勤可スタッフを優先
+      const sortedStaff = [...staffList].sort((a,b)=>{
+        const aA=availGenSet.has(`${a.id}_${ds}`)?0:1;
+        const bA=availGenSet.has(`${b.id}_${ds}`)?0:1;
+        return aA-bA;
+      });
+      for (const staff of sortedStaff) {
         const tmpl = tmplMap[`${staff.id}_${dow}`];
         if (!tmpl) continue;
         if (rqKeys.has(`${staff.id}_${ds}`)) continue;
@@ -1688,7 +1716,8 @@ async function submitSchedule(){
   try{const from=`${sYear}-${String(sMonth).padStart(2,'0')}-01`,days=new Date(sYear,sMonth,0).getDate(),to=`${sYear}-${String(sMonth).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
   await api(`requests?staff_id=eq.${currentStaff.id}&date=gte.${from}&date=lte.${to}`,{method:'DELETE',prefer:'return=minimal'});
   if(offs.length) await api('requests',{method:'POST',body:JSON.stringify(offs.map(([date])=>({store_id:currentStaff.storeId,staff_id:currentStaff.id,date,reason:'',status:'未承認'})))});
-  showToast(`✅ 送信完了！出勤${works.length}日・休み希望${offs.length}日`,'success');}catch(e){showToast('エラー:'+e.message,'error');}
+  if(works.length) await api('requests',{method:'POST',body:JSON.stringify(works.map(([date])=>({store_id:currentStaff.storeId,staff_id:currentStaff.id,date,reason:'',status:'出勤可'})))});
+  showToast(`✅ 送信完了！出勤可${works.length}日・休み希望${offs.length}日`,'success');}catch(e){showToast('エラー:'+e.message,'error');}
 }
 // ===== マイシフト =====
 let myShiftYear, myShiftMonth;
