@@ -324,6 +324,20 @@ header h1 { font-size:17px; font-weight:700; }
 .perf-kpi .lbl { font-size:8px; color:var(--gray); }
 .perf-productivity-val { font-size:12px; font-weight:700; color:var(--green); }
 .perf-cal-cell.today-cell { background:var(--green-light); }
+
+/* ===== AI生成モーダル ===== */
+.ai-modal-box { background:white; border-radius:12px; width:92%; max-width:660px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.25); }
+.ai-modal-hd { padding:14px 18px; border-bottom:1px solid var(--gray-border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.ai-modal-hd h3 { font-size:15px; font-weight:700; color:var(--brown); }
+.ai-modal-body { flex:1; overflow-y:auto; padding:14px 18px; }
+.ai-modal-ft { padding:12px 18px; border-top:1px solid var(--gray-border); display:flex; gap:8px; justify-content:flex-end; flex-shrink:0; }
+.ai-stat { font-size:11px; padding:3px 10px; border-radius:10px; font-weight:600; }
+.ai-stat.ok { background:#E8F5E9; color:var(--green); }
+.ai-stat.warn { background:#FFF3E0; color:#E65100; }
+.ai-stat.ng { background:#FFEBEE; color:var(--red); }
+.ai-warn-badge { font-size:9px; background:#FFF3E0; color:#E65100; padding:1px 5px; border-radius:8px; margin-left:4px; }
+.ai-day-row { border-bottom:1px solid #F5F5F5; cursor:pointer; }
+.ai-day-row:hover { background:#FAFAFA; }
 </style>
 </head>
 <body>
@@ -519,7 +533,7 @@ header h1 { font-size:17px; font-weight:700; }
       <div class="gen-row">
         <label style="font-size:12px;font-weight:600">対象月：</label>
         <input type="month" id="genMonth">
-        <button class="btn-gen" onclick="generateShifts()">▶ 生成する</button>
+        <button class="btn-gen" onclick="generateAIShifts()">🤖 AI生成</button>
       </div>
     </div>
     <div class="tmpl-wrap">
@@ -1367,23 +1381,172 @@ async function saveDeadline(){
     showToast(`✅ 締切日を毎月${day}日に設定しました`,'success');
   } catch(e) { showToast('エラー:'+e.message,'error'); }
 }
-async function generateShifts(){
-  const ms=document.getElementById('genMonth').value;if(!ms){showToast('月を選択してください','error');return;}
-  const [y,m]=ms.split('-').map(Number),days=new Date(y,m,0).getDate();
-  if(!confirm(`${y}年${m}月のシフトをテンプレートから生成しますか？`))return;
-  try{const from=`${y}-${String(m).padStart(2,'0')}-01`,to=`${y}-${String(m).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
-  const existing=await api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}`);
-  const exKeys=new Set(existing.map(s=>`${s.staff_id}_${s.date}`));
-  const reqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`);
-  const rqKeys=new Set(reqs.map(r=>`${r.staff_id}_${r.date}`));
-  const news=[];
-  for(let d=1;d<=days;d++){const dt=new Date(y,m-1,d),dow=dt.getDay(),ds=fmt(dt);
-    templates.filter(t=>t.dow===dow&&t.active).forEach(t=>{const k=`${t.staff_id}_${ds}`;if(!exKeys.has(k)&&!rqKeys.has(k)) news.push({store_id:adminStoreId,staff_id:t.staff_id,date:ds,start_hour:t.start_hour,end_hour:t.end_hour,dept:t.dept,status:'仮'});});
-  }
-  if(!news.length){showToast('生成できるシフトがありません','error');return;}
-  for(let i=0;i<news.length;i+=100) await api('shifts',{method:'POST',body:JSON.stringify(news.slice(i,i+100))});
-  showToast(`✅ ${news.length}件生成しました`,'success');}catch(e){showToast('エラー:'+e.message,'error');}
+let aiGeneratedShifts = [];
+
+async function generateAIShifts() {
+  const ms = document.getElementById('genMonth').value;
+  if (!ms) { showToast('月を選択してください', 'error'); return; }
+  const [y, m] = ms.split('-').map(Number);
+  const days = new Date(y, m, 0).getDate();
+  const pad = n => String(n).padStart(2, '0');
+  const from = `${y}-${pad(m)}-01`;
+  const to = `${y}-${pad(m)}-${pad(days)}`;
+  // 連勤計算のため6日前から取得
+  const prevDate = new Date(y, m-1, 1);
+  prevDate.setDate(prevDate.getDate() - 6);
+  const prevFrom = fmt(prevDate);
+  showToast('データ取得中...', 'success');
+  try {
+    const [prevShifts, existingShifts, reqsRaw, targets] = await Promise.all([
+      api(`shifts?store_id=eq.${adminStoreId}&date=gte.${prevFrom}&date=lt.${from}`),
+      api(`shifts?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}`),
+      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.承認`),
+      api(`shift_targets?store_id=eq.${adminStoreId}`).catch(() => [])
+    ]);
+    const rqKeys = new Set(reqsRaw.map(r => `${r.staff_id}_${r.date}`));
+    const exKeys = new Set(existingShifts.map(s => `${s.staff_id}_${s.date}`));
+    const staffMap = {}; staffList.forEach(s => staffMap[s.id] = s);
+    // 目標人数 by DOW（ピーク時間帯10-16の最大値）
+    const targetHcByDow = {};
+    targets.forEach(t => {
+      if (t.hour >= 10 && t.hour <= 16 && t.target_headcount != null) {
+        if (!targetHcByDow[t.dow] || t.target_headcount > targetHcByDow[t.dow])
+          targetHcByDow[t.dow] = t.target_headcount;
+      }
+    });
+    // 連勤トラッキング
+    const workedDates = {};
+    [...prevShifts, ...existingShifts].forEach(sh => {
+      if (!workedDates[sh.staff_id]) workedDates[sh.staff_id] = new Set();
+      workedDates[sh.staff_id].add(sh.date);
+    });
+    const genDates = {};
+    // 月次時間トラッキング（扶養枠）
+    const monthlyHours = {};
+    existingShifts.forEach(sh => {
+      if (!monthlyHours[sh.staff_id]) monthlyHours[sh.staff_id] = 0;
+      monthlyHours[sh.staff_id] += Math.max(0, (sh.end_hour||0) - (sh.start_hour||0));
+    });
+    const genHours = {};
+    // テンプレート by staff_id_dow
+    const tmplMap = {};
+    templates.filter(t => t.active).forEach(t => { tmplMap[`${t.staff_id}_${t.dow}`] = t; });
+    // 生成
+    const generated = [];
+    const warnings = [];
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(y, m-1, d);
+      const dow = date.getDay();
+      const ds = `${y}-${pad(m)}-${pad(d)}`;
+      for (const staff of staffList) {
+        const tmpl = tmplMap[`${staff.id}_${dow}`];
+        if (!tmpl) continue;
+        if (rqKeys.has(`${staff.id}_${ds}`)) continue;
+        if (exKeys.has(`${staff.id}_${ds}`)) continue;
+        // 連勤チェック（4連勤以上はスキップ）
+        const allDates = new Set([...(workedDates[staff.id]||[]), ...(genDates[staff.id]||[])]);
+        let consec = 0;
+        const cd = new Date(ds); cd.setDate(cd.getDate() - 1);
+        while (allDates.has(fmt(cd)) && consec < 10) { consec++; cd.setDate(cd.getDate() - 1); }
+        if (consec >= 4) { warnings.push({ date: ds, staff_id: staff.id, type: 'consec' }); continue; }
+        // 扶養枠チェック
+        const wage = staff.hourly_wage || 0;
+        const fuyouLimit = staff.fuyou_limit || 0;
+        if (fuyouLimit > 0 && wage > 0) {
+          const monthLimit = fuyouLimit * 10000 / 12;
+          const shiftHours = (tmpl.end_hour||0) - (tmpl.start_hour||0);
+          const earnedSoFar = ((monthlyHours[staff.id]||0) + (genHours[staff.id]||0)) * wage;
+          if (earnedSoFar + shiftHours * wage > monthLimit) {
+            warnings.push({ date: ds, staff_id: staff.id, type: 'fuyou' }); continue;
+          }
+          genHours[staff.id] = (genHours[staff.id]||0) + shiftHours;
+        }
+        // 追加
+        generated.push({ store_id: adminStoreId, staff_id: staff.id, date: ds,
+          start_hour: tmpl.start_hour, end_hour: tmpl.end_hour, dept: tmpl.dept, status: '仮' });
+        if (!genDates[staff.id]) genDates[staff.id] = new Set();
+        genDates[staff.id].add(ds);
+      }
+    }
+    if (!generated.length) { showToast('生成できるシフトがありません', 'error'); return; }
+    aiGeneratedShifts = generated;
+    showAIPreviewModal(generated, warnings, targetHcByDow, staffMap, y, m, days, pad);
+  } catch(e) { showToast('エラー: ' + e.message, 'error'); }
 }
+
+function showAIPreviewModal(generated, warnings, targetHcByDow, staffMap, y, m, days, pad) {
+  const warnsByDate = {};
+  warnings.forEach(w => { if (!warnsByDate[w.date]) warnsByDate[w.date] = []; warnsByDate[w.date].push(w); });
+  const byDate = {};
+  generated.forEach(sh => {
+    if (!byDate[sh.date]) byDate[sh.date] = { s: [], m: [] };
+    byDate[sh.date][sh.dept].push(sh);
+  });
+  let rows = '', daysBelow = 0;
+  const DOWJP = ['日','月','火','水','木','金','土'];
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(y, m-1, d);
+    const dow = date.getDay();
+    const ds = `${y}-${pad(m)}-${pad(d)}`;
+    const ds2 = byDate[ds] || { s: [], m: [] };
+    const total = ds2.s.length + ds2.m.length;
+    const target = targetHcByDow[dow] || 0;
+    const dayWarns = warnsByDate[ds] || [];
+    const isBelow = target > 0 && total < target;
+    if (isBelow) daysBelow++;
+    const statusCls = isBelow ? 'warn' : 'ok';
+    const statusTxt = target > 0 ? `${total}/${Math.round(target)}名` : `${total}名`;
+    const warnBadges = dayWarns.map(w => {
+      const nm = staffMap[w.staff_id]?.name || '?';
+      return `<span class="ai-warn-badge">${nm}:${w.type === 'consec' ? '連勤' : '扶養'}</span>`;
+    }).join('');
+    const staffNames = [
+      ...ds2.s.map(sh => `<span style="color:var(--sales)">${staffMap[sh.staff_id]?.name||'?'}</span>`),
+      ...ds2.m.map(sh => `<span style="color:var(--mfg)">${staffMap[sh.staff_id]?.name||'?'}</span>`)
+    ].join(' ');
+    rows += `<div class="ai-day-row" style="${isBelow?'background:#FFFDE7':''}" onclick="const el=this.querySelector('.ai-names');el.style.display=el.style.display==='none'?'block':'none'">
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 10px">
+        <span style="width:90px;font-size:12px;font-weight:600">${m}/${d}（${DOWJP[dow]}）</span>
+        <span style="width:40px;text-align:center;font-size:11px;color:var(--sales)">${ds2.s.length}販</span>
+        <span style="width:40px;text-align:center;font-size:11px;color:var(--mfg)">${ds2.m.length}製</span>
+        <span class="ai-stat ${statusCls}" style="min-width:60px;text-align:center">${statusTxt}</span>
+        <span style="flex:1">${warnBadges}</span>
+      </div>
+      <div class="ai-names" style="display:none;padding:4px 10px 8px 100px;font-size:11px">${staffNames||'—'}</div>
+    </div>`;
+  }
+  const summary = `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <span class="ai-stat ok">生成 ${generated.length}件</span>
+    ${daysBelow>0?`<span class="ai-stat warn">充足不足 ${daysBelow}日</span>`:''}
+    ${warnings.length>0?`<span class="ai-stat ng">スキップ ${warnings.length}件</span>`:''}
+  </div>
+  ${warnings.length>0?`<p style="font-size:11px;color:var(--gray);margin-bottom:12px">⚠ 連勤制限・扶養枠超過のスタッフはスキップ済み（行クリックでスタッフ名表示）</p>`:'<p style="font-size:11px;color:var(--gray);margin-bottom:12px">行をクリックするとスタッフ名が展開表示されます</p>'}`;
+  document.getElementById('aiSummary').innerHTML = summary;
+  document.getElementById('aiPreviewTable').innerHTML = rows;
+  const btn = document.getElementById('aiApproveBtn');
+  btn.textContent = `承認して登録 (${generated.length}件)`;
+  btn.disabled = false;
+  document.getElementById('aiModal').classList.add('open');
+}
+
+async function approveAIShifts() {
+  if (!aiGeneratedShifts.length) return;
+  const btn = document.getElementById('aiApproveBtn');
+  btn.disabled = true; btn.textContent = '登録中...';
+  try {
+    for (let i = 0; i < aiGeneratedShifts.length; i += 100)
+      await api('shifts', { method: 'POST', body: JSON.stringify(aiGeneratedShifts.slice(i, i+100)) });
+    showToast(`✅ ${aiGeneratedShifts.length}件のシフトを登録しました`, 'success');
+    document.getElementById('aiModal').classList.remove('open');
+    aiGeneratedShifts = [];
+  } catch(e) {
+    showToast('エラー: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = `承認して登録 (${aiGeneratedShifts.length}件)`;
+  }
+}
+
+
 // ===== スタッフ画面 =====
 function staffTab(tab){
   ['schedule','myshift','notice','swap','leave','today'].forEach(t=>{
@@ -2348,6 +2511,7 @@ document.getElementById('noticeModal').addEventListener('click',function(e){if(e
 document.getElementById('swapModal').addEventListener('click',function(e){if(e.target===this)closeSwapModal();});
 document.getElementById('skillModal').addEventListener('click',function(e){if(e.target===this)closeSkillModal();});
 document.getElementById('leaveRequestModal').addEventListener('click',function(e){if(e.target===this)closeLeaveRequestModal();});
+document.getElementById('aiModal').addEventListener('click',function(e){if(e.target===this)document.getElementById('aiModal').classList.remove('open');});
 
 // ===== shift_targets 保存 =====
 async function saveShiftTarget(storeId, dow, hour, field, value) {
@@ -2448,5 +2612,23 @@ async function renderProductivityCalendar() {
 
 init();
 </script>
+
+<!-- AI生成プレビューモーダル -->
+<div class="modal-overlay" id="aiModal">
+  <div class="ai-modal-box">
+    <div class="ai-modal-hd">
+      <h3>🤖 AI生成プレビュー</h3>
+      <button class="modal-close" onclick="document.getElementById('aiModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="ai-modal-body">
+      <div id="aiSummary"></div>
+      <div id="aiPreviewTable"></div>
+    </div>
+    <div class="ai-modal-ft">
+      <button class="btn btn-outline" onclick="document.getElementById('aiModal').classList.remove('open')">キャンセル</button>
+      <button class="btn btn-primary" id="aiApproveBtn" onclick="approveAIShifts()">承認して登録</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
