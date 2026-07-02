@@ -396,32 +396,6 @@ header h1 { font-size:17px; font-weight:700; }
 .sub-mini-avail { background:var(--success-light); color:var(--success); font-weight:700; }
 .sub-mini-off { background:var(--error-light); color:var(--error); font-weight:700; }
 .sub-mini-empty { color:var(--border); }
-
-/* ===== 提出確認タブ ===== */
-.sub-card { background:var(--surface); border-radius:12px; padding:12px 16px; margin-bottom:8px; box-shadow:0 1px 4px rgba(0,0,0,0.06); border-left:4px solid var(--border); }
-.sub-card.sub-ok { border-left-color:var(--success); cursor:pointer; }
-.sub-card.sub-ok:hover { background:var(--gray-light); }
-.sub-card.sub-ng { border-left-color:var(--warn); }
-.sub-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; }
-.sub-status { font-size:12px; font-weight:600; margin-bottom:2px; }
-.sub-status.ok { color:var(--success); }
-.sub-status.ng { color:var(--warn); }
-.sub-detail { font-size:11px; color:var(--text-sub); }
-/* ===== 通知バッジ ===== */
-.notif-badge { display:inline-flex; align-items:center; justify-content:center; background:var(--error); color:white; border-radius:50%; font-size:9px; font-weight:700; width:16px; height:16px; margin-left:3px; vertical-align:middle; line-height:1; }
-.notif-item { background:var(--surface); border-radius:10px; padding:12px 14px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-left:3px solid var(--accent); cursor:pointer; }
-.notif-item.read { border-left-color:var(--border); opacity:0.75; }
-.notif-item-type { font-size:10px; font-weight:700; color:var(--accent); margin-bottom:3px; }
-.notif-item-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
-.notif-item-body { font-size:12px; color:var(--text-sub); }
-.notif-item-date { font-size:10px; color:var(--text-sub); margin-top:4px; }
-/* 提出詳細カレンダー */
-.sub-mini-cal { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-top:10px; }
-.sub-mini-day { text-align:center; font-size:11px; padding:5px 2px; border-radius:6px; }
-.sub-mini-hd { font-size:10px; font-weight:700; color:var(--text-sub); padding:2px; text-align:center; }
-.sub-mini-avail { background:var(--success-light); color:var(--success); font-weight:700; }
-.sub-mini-off { background:var(--error-light); color:var(--error); font-weight:700; }
-.sub-mini-empty { color:var(--border); }
 </style>
 </head>
 <body>
@@ -1087,18 +1061,7 @@ header h1 { font-size:17px; font-weight:700; }
     </div>
   </div>
 </div>
-<!-- 提出詳細モーダル -->
-<div class="modal-overlay" id="submissionDetailModal">
-  <div class="modal-sheet" style="max-height:85vh;overflow-y:auto">
-    <div class="modal-hd">
-      <h3 id="submissionDetailTitle">提出内容確認</h3>
-      <button class="modal-close" onclick="closeSubmissionDetail()">✕</button>
-    </div>
-    <div style="padding:12px 16px 24px" id="submissionDetailBody">
-      <div class="loading">読み込み中...</div>
-    </div>
-  </div>
-</div>
+
 <div class="toast" id="toast"></div>
 <!-- 一括バー -->
 <div class="bulk-bar" id="bulkBar">
@@ -1263,7 +1226,6 @@ function adminTab(tab) {
   else if (tab==='skillmap') loadSkillMap();
   else if (tab==='leave') loadLeave();
   else if (tab==='productivity') renderProductivityCalendar();
-  else if (tab==='submission') renderSubmission();
   else if (tab==='submission') renderSubmission();
 }
 
