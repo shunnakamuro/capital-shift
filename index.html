@@ -2296,7 +2296,11 @@ async function renderSubmission(){
     const from=`${subYear}-${String(subMonth).padStart(2,'0')}-01`;
     const days=new Date(subYear,subMonth,0).getDate();
     const to=`${subYear}-${String(subMonth).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
-    const allReqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=in.(出勤可,未承認)&order=created_at.asc`);
+    const [availReqs, offReqs]=await Promise.all([
+      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`),
+      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.未承認`)
+    ]);
+    const allReqs=[...availReqs,...offReqs];
     const byStaff={};
     allReqs.forEach(r=>{
       if(!byStaff[r.staff_id]) byStaff[r.staff_id]={avail:[],off:[],lastDate:null};
