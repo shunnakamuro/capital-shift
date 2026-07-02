@@ -1226,7 +1226,7 @@ function adminTab(tab) {
   else if (tab==='skillmap') loadSkillMap();
   else if (tab==='leave') loadLeave();
   else if (tab==='productivity') renderProductivityCalendar();
-  else if (tab==='submission') setTimeout(()=>renderSubmission(),50);
+  else if (tab==='submission') goThisSubMonth();
 }
 
 async function loadAdminData() {
