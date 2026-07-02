@@ -1226,7 +1226,7 @@ function adminTab(tab) {
   else if (tab==='skillmap') loadSkillMap();
   else if (tab==='leave') loadLeave();
   else if (tab==='productivity') renderProductivityCalendar();
-  else if (tab==='submission') renderSubmission();
+  else if (tab==='submission') setTimeout(()=>renderSubmission(),50);
 }
 
 async function loadAdminData() {
@@ -2292,14 +2292,13 @@ async function renderSubmission(){
   const sumEl=document.getElementById('submissionSummary');
   if(!listEl) return;
   listEl.innerHTML='<div class="loading">読み込み中...</div>';
+  if(!adminStoreId){listEl.innerHTML='<div style="padding:20px;color:var(--warn);font-size:13px">店舗が未選択です</div>';return;}
   try{
     const from=`${subYear}-${String(subMonth).padStart(2,'0')}-01`;
     const days=new Date(subYear,subMonth,0).getDate();
     const to=`${subYear}-${String(subMonth).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
-    const [availReqs, offReqs]=await Promise.all([
-      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`),
-      api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.未承認`)
-    ]);
+    const availReqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.出勤可`).catch(()=>[]);
+    const offReqs=await api(`requests?store_id=eq.${adminStoreId}&date=gte.${from}&date=lte.${to}&status=eq.未承認`).catch(()=>[]);
     const allReqs=[...availReqs,...offReqs];
     const byStaff={};
     allReqs.forEach(r=>{
