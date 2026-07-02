@@ -602,6 +602,24 @@ header h1 { font-size:17px; font-weight:700; }
       </div>
     </div>
   </div>
+  <!-- 提出確認 -->
+  <div id="admin-submission" style="display:none">
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="nav-btn" onclick="changeSubMonth(-1)">‹</button>
+        <div class="period-label" id="subMonthLabel">読み込み中...</div>
+        <button class="nav-btn" onclick="changeSubMonth(1)">›</button>
+        <button class="btn btn-outline btn-sm" onclick="goThisSubMonth()">今月</button>
+      </div>
+      <div style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="generateAIShifts()">🤖 AIシフト生成</button>
+      </div>
+    </div>
+    <div style="padding:12px 16px 40px">
+      <div id="submissionSummary" style="font-size:12px;color:var(--text-sub);margin-bottom:10px"></div>
+      <div id="submissionList"><div class="loading">読み込み中...</div></div>
+    </div>
+  </div>
 </div>
 <!-- ===== スタッフ画面 ===== -->
 <div class="screen" id="screen-staff">
@@ -999,24 +1017,7 @@ header h1 { font-size:17px; font-weight:700; }
       </div>
     </div>
   </div>
-<!-- 提出確認 -->
-<div id="admin-submission" style="display:none">
-  <div class="toolbar">
-    <div style="display:flex;align-items:center;gap:8px">
-      <button class="nav-btn" onclick="changeSubMonth(-1)">‹</button>
-      <div class="period-label" id="subMonthLabel">読み込み中...</div>
-      <button class="nav-btn" onclick="changeSubMonth(1)">›</button>
-      <button class="btn btn-outline btn-sm" onclick="goThisSubMonth()">今月</button>
-    </div>
-    <div style="margin-left:auto">
-      <button class="btn btn-primary btn-sm" onclick="generateAIShifts()">🤖 AIシフト生成</button>
-    </div>
-  </div>
-  <div style="padding:12px 16px 40px">
-    <div id="submissionSummary" style="font-size:12px;color:var(--text-sub);margin-bottom:10px"></div>
-    <div id="submissionList"><div class="loading">読み込み中...</div></div>
-  </div>
-</div>
+
 
 <!-- 実績カレンダー -->
 <div id="admin-productivity" style="display:none">
